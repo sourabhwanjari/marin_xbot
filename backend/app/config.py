@@ -25,12 +25,18 @@ class Settings(BaseModel):
     IS_DEMO: bool = True
     
     # CORS
-    ALLOWED_ORIGINS: list[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ]
+    ALLOWED_ORIGINS: list[str] = (
+        [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
+        if os.getenv("CORS_ORIGINS")
+        else [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "https://marin-xbot.vercel.app",
+        ]
+    )
+    CORS_ORIGIN_REGEX: str = r"^https://.*\.vercel\.app$"
     
     # Placeholders for future services (no actual secrets in Phase 1)
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
