@@ -1,0 +1,187 @@
+{
+  "system": "SONAR-AI Underwater Debris Detection System",
+  "generated_at": "2026-09-14T06:18:25.513277",
+  "mode": "demo",
+  "total_anomalies": 5,
+  "summary": {
+    "high_confidence_count": 2,
+    "medium_confidence_count": 2,
+    "low_confidence_count": 1,
+    "classes": {
+      "ghost_net": 1,
+      "shipwreck": 1,
+      "pipe": 1,
+      "cylinder": 1,
+      "debris": 1
+    }
+  },
+  "preprocessing_metadata": {},
+  "detections": [
+    {
+      "id": 1,
+      "class": "ghost_net",
+      "label": "Ghost Net",
+      "confidence": 0.93,
+      "confidence_percent": 93,
+      "bbox": {
+        "x1": 180,
+        "y1": 132,
+        "x2": 400,
+        "y2": 252
+      },
+      "estimated_width": 3.2,
+      "estimated_height": 2.1,
+      "shape_score": 0.82,
+      "shadow_score": 0.6,
+      "shadow_analysis": {
+        "shadow_score": 0.6,
+        "mean_intensity": 79.5,
+        "global_mean": 99.8,
+        "method": "acoustic_shadow_heuristic"
+      },
+      "anomaly_score": 0.842,
+      "anomaly_score_percent": 84,
+      "status": "HIGH CONFIDENCE",
+      "tier": "high",
+      "latitude": 18.922097,
+      "longitude": 72.834726,
+      "location_type": "Approximate Image-Level Location",
+      "depth_m": 28.4,
+      "heading_deg": 85.5,
+      "timestamp": "2026-09-12T10:30:00Z"
+    },
+    {
+      "id": 2,
+      "class": "shipwreck",
+      "label": "Shipwreck",
+      "confidence": 0.88,
+      "confidence_percent": 88,
+      "bbox": {
+        "x1": 520,
+        "y1": 228,
+        "x2": 870,
+        "y2": 384
+      },
+      "estimated_width": 11.4,
+      "estimated_height": 4.2,
+      "shape_score": 0.9,
+      "shadow_score": 0.51,
+      "shadow_analysis": {
+        "shadow_score": 0.51,
+        "mean_intensity": 98.2,
+        "global_mean": 99.8,
+        "method": "acoustic_shadow_heuristic"
+      },
+      "anomaly_score": 0.81,
+      "anomaly_score_percent": 81,
+      "status": "HIGH CONFIDENCE",
+      "tier": "high",
+      "latitude": 18.921912,
+      "longitude": 72.834705,
+      "location_type": "Approximate Image-Level Location",
+      "depth_m": 28.4,
+      "heading_deg": 85.5,
+      "timestamp": "2026-09-12T10:30:00Z"
+    },
+    {
+      "id": 3,
+      "class": "pipe",
+      "label": "Pipe",
+      "confidence": 0.74,
+      "confidence_percent": 74,
+      "bbox": {
+        "x1": 250,
+        "y1": 408,
+        "x2": 650,
+        "y2": 480
+      },
+      "estimated_width": 5.8,
+      "estimated_height": 0.9,
+      "shape_score": 0.85,
+      "shadow_score": 0.5,
+      "shadow_analysis": {
+        "shadow_score": 0.5,
+        "mean_intensity": 101.2,
+        "global_mean": 99.8,
+        "method": "acoustic_shadow_heuristic"
+      },
+      "anomaly_score": 0.714,
+      "anomaly_score_percent": 71,
+      "status": "MEDIUM CONFIDENCE",
+      "tier": "medium",
+      "latitude": 18.922019,
+      "longitude": 72.834653,
+      "location_type": "Approximate Image-Level Location",
+      "depth_m": 28.4,
+      "heading_deg": 85.5,
+      "timestamp": "2026-09-12T10:30:00Z"
+    },
+    {
+      "id": 4,
+      "class": "cylinder",
+      "label": "Cylinder",
+      "confidence": 0.62,
+      "confidence_percent": 62,
+      "bbox": {
+        "x1": 750,
+        "y1": 90,
+        "x2": 890,
+        "y2": 198
+      },
+      "estimated_width": 1.9,
+      "estimated_height": 0.8,
+      "shape_score": 0.8,
+      "shadow_score": 0.49,
+      "shadow_analysis": {
+        "shadow_score": 0.49,
+        "mean_intensity": 101.9,
+        "global_mean": 99.8,
+        "method": "acoustic_shadow_heuristic"
+      },
+      "anomaly_score": 0.63,
+      "anomaly_score_percent": 63,
+      "status": "MEDIUM CONFIDENCE",
+      "tier": "medium",
+      "latitude": 18.92186,
+      "longitude": 72.834761,
+      "location_type": "Approximate Image-Level Location",
+      "depth_m": 28.4,
+      "heading_deg": 85.5,
+      "timestamp": "2026-09-12T10:30:00Z"
+    },
+    {
+      "id": 5,
+      "class": "debris",
+      "label": "Other Debris",
+      "confidence": 0.54,
+      "confidence_percent": 54,
+      "bbox": {
+        "x1": 80,
+        "y1": 432,
+        "x2": 200,
+        "y2": 516
+      },
+      "estimated_width": 1.6,
+      "estimated_height": 1.2,
+      "shape_score": 0.7,
+      "shadow_score": 0.59,
+      "shadow_analysis": {
+        "shadow_score": 0.59,
+        "mean_intensity": 81.0,
+        "global_mean": 99.8,
+        "method": "acoustic_shadow_heuristic"
+      },
+      "anomaly_score": 0.582,
+      "anomaly_score_percent": 58,
+      "status": "LOW CONFIDENCE",
+      "tier": "low",
+      "latitude": 18.922157,
+      "longitude": 72.834632,
+      "location_type": "Approximate Image-Level Location",
+      "depth_m": 28.4,
+      "heading_deg": 85.5,
+      "timestamp": "2026-09-12T10:30:00Z"
+    }
+  ],
+  "disclaimer": "Side Scan Sonar interpretation depends strongly on sonar frequency, range, vehicle motion, seafloor conditions, object orientation, and acoustic shadows. This prototype is intended as a decision-support tool."
+}

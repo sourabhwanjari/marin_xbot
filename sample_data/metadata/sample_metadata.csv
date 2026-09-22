@@ -1,0 +1,2 @@
+image,latitude,longitude,heading,depth,timestamp,ping_id,swath_m
+sample_sonar_02.png,18.9245,72.8392,92.0,31.2,2026-09-12T10:35:14Z,1082,60.0

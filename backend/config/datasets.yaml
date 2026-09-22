@@ -1,0 +1,37 @@
+# ==================================================
+# MARINEX AI - Satellite Earth Observation Datasets
+# Problem Statement: ORCA — Marine EcOsystem Reasoning with Collaborative Agents
+# ==================================================
+
+satellite:
+  enabled: false
+  provider: "ISRO MOSDAC / SAC"
+  portal_url: "https://www.mosdac.gov.in"
+  auth_required: true
+
+  products:
+    oceansat_ocm3_sst:
+      name: "Oceansat-3 Ocean Colour Monitor (OCM-3) Sea Surface Temperature"
+      dataset_id: "OS3_OCM_L3_SST_DAILY"
+      enabled: false
+      spatial_resolution: "1 km"
+      temporal_resolution: "Daily"
+      bands: ["Thermal Infrared Band 1", "Thermal Infrared Band 2"]
+      format: "HDF5 / NetCDF4"
+
+    oceansat_ocm3_chlorophyll:
+      name: "Oceansat-3 OCM-3 Chlorophyll-a Concentration"
+      dataset_id: "OS3_OCM_L3_CHL_DAILY"
+      enabled: false
+      spatial_resolution: "1 km"
+      temporal_resolution: "Daily"
+      bands: ["Band 1 (412nm)", "Band 2 (443nm)", "Band 3 (490nm)", "Band 4 (510nm)", "Band 5 (555nm)"]
+      format: "HDF5 / NetCDF4"
+
+    insat3d_cyclone_intensity:
+      name: "INSAT-3D/3DR Rapid Scan Ocean Convection & Cyclone Intensity"
+      dataset_id: "INSAT3D_L2B_HEM"
+      enabled: false
+      spatial_resolution: "4 km"
+      temporal_resolution: "15 minutes"
+      format: "NetCDF4"

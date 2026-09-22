@@ -1,0 +1,13 @@
+# YOLOv8 / YOLOv9 / YOLOv10 Dataset Configuration for SONAR-AI
+path: ../dataset
+train: images/train
+val: images/val
+test: images/test
+
+# Classes
+names:
+  0: ghost_net
+  1: shipwreck
+  2: pipe
+  3: cylinder
+  4: debris

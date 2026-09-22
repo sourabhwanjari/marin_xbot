@@ -1,0 +1,72 @@
+{
+  "type": "FeatureCollection",
+  "name": "Indian Coastal Restricted Maritime Zones & Fairways",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.820, 18.900],
+            [72.860, 18.900],
+            [72.860, 18.940],
+            [72.820, 18.940],
+            [72.820, 18.900]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "restr-mum-01",
+        "name": "Mumbai Naval Dockyard Fairway",
+        "type": "Naval Security Zone",
+        "restriction": "Commercial shipping lane / Naval security sector. Artisanal and mechanized fishing strictly prohibited.",
+        "status": "active"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.290, 13.080],
+            [80.350, 13.080],
+            [80.350, 13.140],
+            [80.290, 13.140],
+            [80.290, 13.080]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "restr-chn-01",
+        "name": "Chennai Port Outer Anchorage Fairway",
+        "type": "Commercial Anchorage & Channel",
+        "restriction": "High vessel traffic fairway. Fishing craft prohibited under Port Trust Regulations.",
+        "status": "active"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [76.220, 9.920],
+            [76.280, 9.920],
+            [76.280, 9.960],
+            [76.220, 9.960],
+            [76.220, 9.920]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "restr-kch-01",
+        "name": "Kochi Naval Channel Fairway",
+        "type": "Naval Channel",
+        "restriction": "Southern Naval Command vessel transit corridor.",
+        "status": "active"
+      }
+    }
+  ]
+}

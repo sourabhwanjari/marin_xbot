@@ -1,0 +1,33 @@
+{
+  "type": "FeatureCollection",
+  "name": "Simplified Indian Coastline Overview",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [72.82, 19.20],
+          [72.83, 18.92],
+          [72.90, 18.70],
+          [73.15, 17.50],
+          [73.80, 15.50],
+          [74.85, 12.85],
+          [76.25, 9.95],
+          [77.55, 8.08],
+          [78.15, 8.80],
+          [79.85, 10.75],
+          [80.30, 13.12],
+          [82.25, 16.95],
+          [83.30, 17.70],
+          [86.70, 20.25],
+          [88.20, 21.65]
+        ]
+      },
+      "properties": {
+        "name": "Indian Peninsular Coastline",
+        "length_km": 7516.6
+      }
+    }
+  ]
+}

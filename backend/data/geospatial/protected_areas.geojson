@@ -1,0 +1,50 @@
+{
+  "type": "FeatureCollection",
+  "name": "Marine Protected Areas & Sanctuaries",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.280, 13.400],
+            [80.360, 13.400],
+            [80.360, 13.550],
+            [80.280, 13.550],
+            [80.280, 13.400]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "mpa-pul-01",
+        "name": "Pulicat Lake & Marine Sanctuary",
+        "type": "Marine Sanctuary & Estuarine Reserve",
+        "restriction": "Mechanized bottom-trawling and dredging prohibited under coastal conservation laws.",
+        "status": "protected"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.100, 9.100],
+            [79.300, 9.100],
+            [79.300, 9.300],
+            [79.100, 9.300],
+            [79.100, 9.100]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "mpa-mannar-01",
+        "name": "Gulf of Mannar Marine National Park",
+        "type": "Biosphere Reserve & Coral Reef Ecosystem",
+        "restriction": "Commercial fishing barred. Artisanal traditional traps regulated.",
+        "status": "protected"
+      }
+    }
+  ]
+}

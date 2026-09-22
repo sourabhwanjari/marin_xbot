@@ -1,0 +1,66 @@
+{
+  "type": "FeatureCollection",
+  "name": "Indian Coastal Fishing & Major Ports",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [72.834, 18.922] },
+      "properties": {
+        "id": "port-mum",
+        "name": "Mumbai Port Trust & Sassoon Docks",
+        "type": "Major Commercial & Fishing Port",
+        "state": "Maharashtra",
+        "vhf_channel": 16,
+        "coastal_sector": "West Coast (Arabian Sea)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [80.298, 13.125] },
+      "properties": {
+        "id": "port-chn",
+        "name": "Chennai Fishing Harbour (Kasimedu)",
+        "type": "Major Fishing Harbour",
+        "state": "Tamil Nadu",
+        "vhf_channel": 16,
+        "coastal_sector": "East Coast (Bay of Bengal)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [76.267, 9.931] },
+      "properties": {
+        "id": "port-kch",
+        "name": "Cochin Fisheries Harbour (Thoppumpady)",
+        "type": "Major Fishing & Cargo Port",
+        "state": "Kerala",
+        "vhf_channel": 16,
+        "coastal_sector": "South-West Coast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [83.218, 17.686] },
+      "properties": {
+        "id": "port-viz",
+        "name": "Visakhapatnam Fishing Harbour",
+        "type": "Major Fishing Harbour",
+        "state": "Andhra Pradesh",
+        "vhf_channel": 16,
+        "coastal_sector": "East Coast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [80.320, 13.420] },
+      "properties": {
+        "id": "port-pul",
+        "name": "Pulicat Artisanal Fish Landing Center",
+        "type": "Artisanal Landing Wharf",
+        "state": "Tamil Nadu",
+        "vhf_channel": 16,
+        "coastal_sector": "Coromandel Coast"
+      }
+    }
+  ]
+}

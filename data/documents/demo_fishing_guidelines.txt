@@ -1,0 +1,22 @@
+DEMO DOCUMENT — NOT OFFICIAL MARINE ADVISORY
+FOR HACKATHON DEMONSTRATION & VERIFICATION ONLY
+
+Document: Sustainable Coastal Fisheries & Zonal Regulations
+Version: 2026.1-DEMO
+Focus: Pelagic Fishing, Mesh Regulations, and Marine Sanctuaries
+
+1. SEASONAL FISHING MORATORIUM (MONSOON BAN)
+To promote juvenile stock replenishment and protect spawning pelagic fish (notably Indian Oil Sardine, Mackerel, and Silver Pomfret), an annual 61-day uniform fishing ban is enforced along the East Coast from April 15 to June 14. During this period, all mechanized fishing vessels, including multi-day trawlers and purse-seiners, are prohibited from operating in the Exclusive Economic Zone (EEZ). Traditional non-motorized craft are exempt from the ban.
+
+2. MINIMUM PERMISSIBLE MESH SIZES
+To prevent juvenile fish depletion:
+- Trawl cod-end mesh size must not be less than 35 mm (square mesh) or 40 mm (diamond mesh).
+- Pelagic gill nets targeted at Sardine and Anchovy must maintain a minimum stretched mesh size of 25 mm.
+- Large pelagic drift nets for Seer Fish and Yellowfin Tuna must have a minimum mesh size of 150 mm.
+Any catch composed of more than 15% juvenile specimens below the Minimum Legal Size (MLS) is subject to fisheries enforcement penalties.
+
+3. MARINE PROTECTED AREAS & CORAL HABITATS
+Fishing is prohibited within 5 nautical miles of designated marine sanctuaries, coral reef reserves, and estuarine nurseries (e.g., Pulicat Lake sanctuary entrance and Gulf of Mannar core zones). Bottom-trawling and dredging in these zones result in automatic vessel impoundment.
+
+4. TARGET SPECIES HABITAT & POTENTIAL FISHING ZONES (PFZ)
+Potential Fishing Zones are delineated where Sea Surface Temperature (SST) thermal fronts intersect with elevated Chlorophyll-a concentrations (values exceeding 0.5 to 1.5 mg/m³). In the Bay of Bengal, thermal fronts between 27.5°C and 28.8°C frequently aggregate schools of pelagic carangids, ribbon fish, and skipjack tuna.

@@ -1,0 +1,12 @@
+{
+  "image": "sample_sonar_01.jpg",
+  "survey_name": "Arabian_Sea_Debris_Survey_Track_04",
+  "latitude": 18.9220,
+  "longitude": 72.8347,
+  "timestamp": "2026-09-12T10:30:00Z",
+  "heading": 85.5,
+  "depth": 28.4,
+  "towfish_altitude_m": 8.2,
+  "swath_range_m": 50.0,
+  "frequency_khz": 450
+}

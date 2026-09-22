@@ -1,0 +1,25 @@
+DEMO DOCUMENT — NOT OFFICIAL MARINE ADVISORY
+FOR HACKATHON DEMONSTRATION & VERIFICATION ONLY
+
+Document: Marine Safety and Heavy Weather Standard Operating Guidelines
+Version: 2026.1-DEMO
+Issued for: Coromandel Coast & Bay of Bengal Maritime Operators
+
+1. HIGH WAVE & SWELL PROTOCOLS
+When significant wave heights exceed 2.0 meters, small artisanal craft (unmotorized canoes and catamarans under 9 meters in length) must cease offshore transit and remain within sheltered lagoons or designated port breakwaters. Mechanized fishing vessels with length overall (LOA) exceeding 15 meters may operate up to 25 nautical miles offshore, provided they maintain continuous VHF watch on Channel 16 and confirm working automated identification systems (AIS).
+
+When significant wave heights exceed 3.5 meters (Rough to Very Rough Sea State), all marine operations, including commercial fishing, dredging, and dive surveys, are immediately suspended across the affected coastal district.
+
+2. CONVECTIVE SQUALLS & LIGHTNING SAFETY
+Isolated convective thunderstorms and squall lines present acute hazards due to sudden localized wind shear and lightning discharge.
+Vessels caught offshore during a sudden squall must:
+a) Immediately disconnect non-grounded high-frequency (HF) antenna whip masts.
+b) Direct all crew members away from exposed metal rigging, winches, and booms to the enclosed wheelhouse.
+c) Reduce vessel speed to steerage way (3 to 5 knots) and head 20 degrees into the prevailing swell to minimize broaching risk.
+d) Anchor only in protected lee waters with minimum 5:1 scope if sea depth is under 20 meters.
+
+3. PORT APPROACHES & RESTRICTED FAIRWAYS
+Vessels operating near major commercial harbours (including Chennai Port and Ennore Anchorage) must strictly avoid designated deep-draft fairways. Fishing nets or longlines must never be deployed within 2.0 nautical miles of the main shipping entry channel. Unauthorized crossing of the naval security sector is prohibited under coastal defense regulations.
+
+4. EMERGENCY DISTRESS & LIFESAVING APPLIANCES
+All sea-going craft must carry lifejackets with marine-grade retroreflective tape for 100% of personnel on board, at least two buoyant smoke signals, three red hand flares, and a waterproof magnetic compass. In case of hull breach or engine breakdown, broadcast a MAYDAY or PAN-PAN call on VHF Channel 16 (156.800 MHz) and activate 406 MHz EPIRB beacons.

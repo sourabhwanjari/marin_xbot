@@ -1,0 +1,325 @@
+{
+  "system": "SONAR-AI Underwater Debris Detection System",
+  "generated_at": "2026-09-14T06:18:25.485494",
+  "mode": "demo",
+  "total_anomalies": 5,
+  "summary": {
+    "high_confidence_count": 2,
+    "medium_confidence_count": 2,
+    "low_confidence_count": 1,
+    "classes": {
+      "ghost_net": 1,
+      "shipwreck": 1,
+      "pipe": 1,
+      "cylinder": 1,
+      "debris": 1
+    }
+  },
+  "preprocessing_metadata": {
+    "original_width": 1000,
+    "original_height": 600,
+    "processed_width": 1000,
+    "processed_height": 600,
+    "scale_factor": 1.0,
+    "pixel_resolution_cross_m": 0.05,
+    "pixel_resolution_along_m": 0.0167,
+    "swath_range_m": 50.0,
+    "denoise_applied": true,
+    "denoise_strength": 7.0,
+    "clahe_applied": true,
+    "clahe_clip_limit": 2.5
+  },
+  "detections": [
+    {
+      "id": 1,
+      "class": "ghost_net",
+      "label": "Ghost Net",
+      "confidence": 0.94,
+      "confidence_percent": 94,
+      "bbox": {
+        "x1": 180,
+        "y1": 132,
+        "x2": 380,
+        "y2": 240
+      },
+      "estimated_width": 3.4,
+      "estimated_height": 2.1,
+      "model_name": "development_simulator",
+      "model_version": "0.1.0-dev",
+      "timestamp": "2026-09-14T06:18:25.479066",
+      "shape_score": 0.84,
+      "shadow_score": 0.531,
+      "shadow_analysis": {
+        "shadow_detected": false,
+        "shadow_score": 0.531,
+        "mean_shadow_intensity": 99.9,
+        "seabed_mean_intensity": 106.5,
+        "shadow_method": "acoustic_gradient_heuristic",
+        "notes": "Heuristic pixel luminosity contrast analysis."
+      },
+      "anomaly_score": 0.838,
+      "anomaly_score_percent": 84,
+      "anomaly_weights": {
+        "ai_confidence": 0.6,
+        "geometry_evidence": 0.2,
+        "acoustic_shadow": 0.2
+      },
+      "verification_status": "AI_DETECTED",
+      "tier": "high",
+      "latitude": 18.922099,
+      "longitude": 72.8347361,
+      "depth": 28.5,
+      "cross_track_m": -11.0,
+      "along_track_m": 3.8,
+      "location_quality": "APPROXIMATE",
+      "horizontal_uncertainty_m": 8.5,
+      "vertical_uncertainty_m": 2.0,
+      "motion_compensation": {
+        "motion_status": "PARTIAL",
+        "corrections_applied": [],
+        "uncompensated_parameters": [
+          "heave",
+          "pitch",
+          "roll"
+        ],
+        "raw_cross_m": -11.0,
+        "raw_along_m": 3.8,
+        "corrected_cross_m": -11.0,
+        "corrected_along_m": 3.8
+      }
+    },
+    {
+      "id": 2,
+      "class": "shipwreck",
+      "label": "Shipwreck",
+      "confidence": 0.88,
+      "confidence_percent": 88,
+      "bbox": {
+        "x1": 520,
+        "y1": 228,
+        "x2": 840,
+        "y2": 372
+      },
+      "estimated_width": 11.5,
+      "estimated_height": 4.3,
+      "model_name": "development_simulator",
+      "model_version": "0.1.0-dev",
+      "timestamp": "2026-09-14T06:18:25.479066",
+      "shape_score": 0.92,
+      "shadow_score": 0.511,
+      "shadow_analysis": {
+        "shadow_detected": false,
+        "shadow_score": 0.511,
+        "mean_shadow_intensity": 104.2,
+        "seabed_mean_intensity": 106.5,
+        "shadow_method": "acoustic_gradient_heuristic",
+        "notes": "Heuristic pixel luminosity contrast analysis."
+      },
+      "anomaly_score": 0.814,
+      "anomaly_score_percent": 81,
+      "anomaly_weights": {
+        "ai_confidence": 0.6,
+        "geometry_evidence": 0.2,
+        "acoustic_shadow": 0.2
+      },
+      "verification_status": "AI_DETECTED",
+      "tier": "high",
+      "latitude": 18.921919,
+      "longitude": 72.8347,
+      "depth": 28.5,
+      "cross_track_m": 9.0,
+      "along_track_m": -0.0,
+      "location_quality": "APPROXIMATE",
+      "horizontal_uncertainty_m": 8.5,
+      "vertical_uncertainty_m": 2.0,
+      "motion_compensation": {
+        "motion_status": "PARTIAL",
+        "corrections_applied": [],
+        "uncompensated_parameters": [
+          "heave",
+          "pitch",
+          "roll"
+        ],
+        "raw_cross_m": 9.0,
+        "raw_along_m": -0.0,
+        "corrected_cross_m": 9.0,
+        "corrected_along_m": -0.0
+      }
+    },
+    {
+      "id": 3,
+      "class": "pipe",
+      "label": "Pipe",
+      "confidence": 0.76,
+      "confidence_percent": 76,
+      "bbox": {
+        "x1": 250,
+        "y1": 408,
+        "x2": 630,
+        "y2": 468
+      },
+      "estimated_width": 5.8,
+      "estimated_height": 0.9,
+      "model_name": "development_simulator",
+      "model_version": "0.1.0-dev",
+      "timestamp": "2026-09-14T06:18:25.479066",
+      "shape_score": 0.9,
+      "shadow_score": 0.524,
+      "shadow_analysis": {
+        "shadow_detected": false,
+        "shadow_score": 0.524,
+        "mean_shadow_intensity": 101.4,
+        "seabed_mean_intensity": 106.5,
+        "shadow_method": "acoustic_gradient_heuristic",
+        "notes": "Heuristic pixel luminosity contrast analysis."
+      },
+      "anomaly_score": 0.741,
+      "anomaly_score_percent": 74,
+      "anomaly_weights": {
+        "ai_confidence": 0.6,
+        "geometry_evidence": 0.2,
+        "acoustic_shadow": 0.2
+      },
+      "verification_status": "NEEDS_REVIEW",
+      "tier": "medium",
+      "latitude": 18.922027,
+      "longitude": 72.8346562,
+      "depth": 28.5,
+      "cross_track_m": -3.0,
+      "along_track_m": -4.6,
+      "location_quality": "APPROXIMATE",
+      "horizontal_uncertainty_m": 8.5,
+      "vertical_uncertainty_m": 2.0,
+      "motion_compensation": {
+        "motion_status": "PARTIAL",
+        "corrections_applied": [],
+        "uncompensated_parameters": [
+          "heave",
+          "pitch",
+          "roll"
+        ],
+        "raw_cross_m": -3.0,
+        "raw_along_m": -4.6,
+        "corrected_cross_m": -3.0,
+        "corrected_along_m": -4.6
+      }
+    },
+    {
+      "id": 4,
+      "class": "cylinder",
+      "label": "Cylinder",
+      "confidence": 0.64,
+      "confidence_percent": 64,
+      "bbox": {
+        "x1": 740,
+        "y1": 96,
+        "x2": 860,
+        "y2": 186
+      },
+      "estimated_width": 1.9,
+      "estimated_height": 0.8,
+      "model_name": "development_simulator",
+      "model_version": "0.1.0-dev",
+      "timestamp": "2026-09-14T06:18:25.479066",
+      "shape_score": 0.85,
+      "shadow_score": 0.514,
+      "shadow_analysis": {
+        "shadow_detected": false,
+        "shadow_score": 0.514,
+        "mean_shadow_intensity": 103.5,
+        "seabed_mean_intensity": 106.5,
+        "shadow_method": "acoustic_gradient_heuristic",
+        "notes": "Heuristic pixel luminosity contrast analysis."
+      },
+      "anomaly_score": 0.657,
+      "anomaly_score_percent": 66,
+      "anomaly_weights": {
+        "ai_confidence": 0.6,
+        "geometry_evidence": 0.2,
+        "acoustic_shadow": 0.2
+      },
+      "verification_status": "NEEDS_REVIEW",
+      "tier": "medium",
+      "latitude": 18.921865,
+      "longitude": 72.8347504,
+      "depth": 28.5,
+      "cross_track_m": 15.0,
+      "along_track_m": 5.3,
+      "location_quality": "APPROXIMATE",
+      "horizontal_uncertainty_m": 8.5,
+      "vertical_uncertainty_m": 2.0,
+      "motion_compensation": {
+        "motion_status": "PARTIAL",
+        "corrections_applied": [],
+        "uncompensated_parameters": [
+          "heave",
+          "pitch",
+          "roll"
+        ],
+        "raw_cross_m": 15.0,
+        "raw_along_m": 5.3,
+        "corrected_cross_m": 15.0,
+        "corrected_along_m": 5.3
+      }
+    },
+    {
+      "id": 5,
+      "class": "debris",
+      "label": "Other Debris",
+      "confidence": 0.53,
+      "confidence_percent": 53,
+      "bbox": {
+        "x1": 100,
+        "y1": 444,
+        "x2": 200,
+        "y2": 516
+      },
+      "estimated_width": 1.5,
+      "estimated_height": 1.2,
+      "model_name": "development_simulator",
+      "model_version": "0.1.0-dev",
+      "timestamp": "2026-09-14T06:18:25.479066",
+      "shape_score": 0.72,
+      "shadow_score": 0.484,
+      "shadow_analysis": {
+        "shadow_detected": false,
+        "shadow_score": 0.484,
+        "mean_shadow_intensity": 112.2,
+        "seabed_mean_intensity": 106.5,
+        "shadow_method": "acoustic_gradient_heuristic",
+        "notes": "Heuristic pixel luminosity contrast analysis."
+      },
+      "anomaly_score": 0.559,
+      "anomaly_score_percent": 56,
+      "anomaly_weights": {
+        "ai_confidence": 0.6,
+        "geometry_evidence": 0.2,
+        "acoustic_shadow": 0.2
+      },
+      "verification_status": "NEEDS_REVIEW",
+      "tier": "low",
+      "latitude": 18.9221575,
+      "longitude": 72.8346429,
+      "depth": 28.5,
+      "cross_track_m": -17.5,
+      "along_track_m": -6.0,
+      "location_quality": "APPROXIMATE",
+      "horizontal_uncertainty_m": 8.5,
+      "vertical_uncertainty_m": 2.0,
+      "motion_compensation": {
+        "motion_status": "PARTIAL",
+        "corrections_applied": [],
+        "uncompensated_parameters": [
+          "heave",
+          "pitch",
+          "roll"
+        ],
+        "raw_cross_m": -17.5,
+        "raw_along_m": -6.0,
+        "corrected_cross_m": -17.5,
+        "corrected_along_m": -6.0
+      }
+    }
+  ],
+  "disclaimer": "Side Scan Sonar interpretation depends strongly on sonar frequency, range, vehicle motion, seafloor conditions, object orientation, and acoustic shadows. This prototype is intended as a decision-support tool."
+}
