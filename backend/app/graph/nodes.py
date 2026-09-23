@@ -20,9 +20,10 @@ def planner_node(state: MarineAgentState) -> MarineAgentState:
     """Planner Node: Decomposes query and selects required specialized agents."""
     logger.info("[LangGraph] Executing planner_node")
     query = state.get("user_query", "")
+    history = state.get("chat_history", [])
     default_loc = state.get("location", {}).get("name") if state.get("location") else None
 
-    plan = planner_agent.plan(query, default_location=default_loc)
+    plan = planner_agent.plan(query, default_location=default_loc, chat_history=history)
 
     state["intent"] = plan.intent.value
     state["tasks"] = plan.tasks
@@ -152,6 +153,7 @@ def response_node(state: MarineAgentState) -> MarineAgentState:
     rag = state.get("rag_results", [{}])[0] if state.get("rag_results") else None
     risk = state.get("risk_results")
     errors = state.get("errors")
+    history = state.get("chat_history", [])
 
     res = response_agent.synthesize(
         query=query,
@@ -163,7 +165,8 @@ def response_node(state: MarineAgentState) -> MarineAgentState:
         geospatial=geospatial,
         rag=rag,
         risk=risk,
-        errors=errors
+        errors=errors,
+        chat_history=history
     )
 
     state["final_answer"] = res.get("answer")

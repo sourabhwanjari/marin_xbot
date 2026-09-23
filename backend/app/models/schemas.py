@@ -87,8 +87,13 @@ class RagStatusResponse(BaseModel):
 
 # --- Chat Schemas ---
 
+class ChatHistoryItem(BaseModel):
+    role: str = "user"  # "user" or "assistant"
+    content: str
+
 class ChatRequest(BaseModel):
     message: str
+    history: Optional[List[ChatHistoryItem]] = Field(default_factory=list)
 
 class ChatResponse(BaseModel):
     message: str

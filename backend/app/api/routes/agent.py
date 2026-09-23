@@ -13,7 +13,12 @@ async def agent_chat_interaction(request: AgentChatRequest):
     an actionable marine decision support recommendation.
     """
     try:
-        result = run_marine_workflow(query=request.message, location=request.location)
+        history = [h.model_dump() if hasattr(h, "model_dump") else h.dict() for h in request.history] if request.history else []
+        result = run_marine_workflow(
+            query=request.message,
+            location=request.location,
+            chat_history=history
+        )
         return AgentChatResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent workflow failed: {str(e)}")

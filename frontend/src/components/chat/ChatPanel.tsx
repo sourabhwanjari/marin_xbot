@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage as ChatMessageType } from "@/types/marine";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import SuggestedQueries from "./SuggestedQueries";
 import { Bot, RefreshCw, Sparkles } from "lucide-react";
 import { sendChatMessage } from "@/services/api";
 
@@ -21,11 +20,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onActionSelect }) => {
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       isDemo: true,
       source: "mock-data",
-      suggestedActions: [
-        "Find Nearest PFZ",
-        "Check Sea State Forecast",
-        "View High Wave Warnings",
-      ],
     },
   ]);
 
@@ -53,11 +47,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onActionSelect }) => {
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
+    const history = messages
+      .filter((m) => m.id !== "initial-01" && !m.id.startsWith("err-"))
+      .map((m) => ({
+        role: m.sender === "user" ? ("user" as const) : ("assistant" as const),
+        content: m.text,
+      }));
+
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(text);
+      const response = await sendChatMessage(text, history);
       const aiMsg: ChatMessageType = {
         id: `ai-${Date.now()}`,
         sender: "ai",
@@ -159,12 +160,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onActionSelect }) => {
         )}
       </div>
 
-      {/* Suggested Queries & Input Area */}
+      {/* Input Area */}
       <div className="p-3 bg-white border-t border-slate-100 shrink-0">
-        <SuggestedQueries
-          onSelectQuery={handleSendMessage}
-          disabled={isLoading}
-        />
         <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
       </div>
     </div>

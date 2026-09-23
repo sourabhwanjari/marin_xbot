@@ -11,7 +11,8 @@ async def chat_interaction(request: ChatRequest):
     Phase 3: Powered by the LangGraph Multi-Agent Orchestration workflow
     (Planner -> Specialized Agents -> Risk Assessment -> Response Synthesis).
     """
-    result = run_marine_workflow(query=request.message)
+    history = [h.model_dump() if hasattr(h, "model_dump") else h.dict() for h in request.history] if request.history else []
+    result = run_marine_workflow(query=request.message, chat_history=history)
 
     suggested_actions = ["Check Current Sea State", "View Active Alerts"]
     if result.get("risk_level") in ["MEDIUM", "HIGH"]:

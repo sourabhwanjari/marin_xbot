@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from langgraph.graph import StateGraph, START, END
 
 from app.graph.state import MarineAgentState
@@ -103,7 +103,11 @@ def build_marine_graph() -> StateGraph:
 marine_graph = build_marine_graph()
 compiled_marine_workflow = marine_graph.compile()
 
-def run_marine_workflow(query: str, location: Optional[str] = None) -> Dict[str, Any]:
+def run_marine_workflow(
+    query: str,
+    location: Optional[str] = None,
+    chat_history: Optional[List[Dict[str, str]]] = None
+) -> Dict[str, Any]:
     """
     Executes the LangGraph multi-agent orchestration workflow for a marine query.
     Returns structured results ready for API responses.
@@ -112,6 +116,7 @@ def run_marine_workflow(query: str, location: Optional[str] = None) -> Dict[str,
 
     initial_state: MarineAgentState = {
         "user_query": query,
+        "chat_history": chat_history or [],
         "intent": None,
         "location": {"name": location} if location else None,
         "time_context": None,

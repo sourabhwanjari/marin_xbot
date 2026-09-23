@@ -96,6 +96,7 @@ class MarineRagChain:
                 # LCEL pipeline
                 context_str = format_docs_for_prompt(docs)
                 messages = self.prompt.format_messages(context=context_str, question=question)
+                response = llm.invoke(messages)
                 raw_content = response.content if hasattr(response, "content") else response
                 if isinstance(raw_content, list):
                     text_parts = [part["text"] for part in raw_content if isinstance(part, dict) and "text" in part]

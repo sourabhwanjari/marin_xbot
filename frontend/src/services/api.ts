@@ -164,29 +164,26 @@ export async function sendAgentChatMessage(request: AgentChatRequest): Promise<A
   return await res.json();
 }
 
-export async function sendChatMessage(message: string, location?: string): Promise<ChatApiResponse> {
+export async function sendChatMessage(
+  message: string,
+  history?: { role: string; content: string }[],
+  location?: string
+): Promise<ChatApiResponse> {
   try {
     // Attempt dedicated LangGraph multi-agent endpoint first
     const agentRes = await fetch(`${API_BASE_URL}/agent/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, location }),
+      body: JSON.stringify({ message, location, history }),
     });
 
     if (agentRes.ok) {
       const data: AgentChatResponse = await agentRes.json();
-      let suggestedActions = ["Check Current Sea State", "View Active Alerts"];
-      if (data.risk_level === "MEDIUM" || data.risk_level === "HIGH") {
-        suggestedActions = ["Inspect Swell on Map", "View Port Control Notices", "Check Safety Guidelines"];
-      } else if (data.intent === "pfz_discovery") {
-        suggestedActions = ["Show Zone Alpha on Map", "Check Weather along Route"];
-      }
-
       return {
         message: data.answer,
         source: `langgraph-multi-agent (${data.data_status})`,
         is_demo: data.is_demo,
-        suggested_actions: suggestedActions,
+        suggested_actions: [],
         related_zones: data.location ? [`${data.location} Sector`] : [],
         sources: data.sources || [],
         is_rag: (data.sources && data.sources.length > 0) || false,
@@ -203,7 +200,7 @@ export async function sendChatMessage(message: string, location?: string): Promi
     const chatRes = await fetch(`${API_BASE_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, history }),
     });
     if (!chatRes.ok) throw new Error(`HTTP error ${chatRes.status}`);
     return await chatRes.json();

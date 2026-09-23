@@ -96,9 +96,15 @@ export interface ChatMessage {
   timeContext?: string;
 }
 
+export interface ChatHistoryItem {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface AgentChatRequest {
   message: string;
   location?: string;
+  history?: ChatHistoryItem[];
 }
 
 export interface AgentChatResponse {

@@ -6,6 +6,7 @@ class MarineAgentState(TypedDict, total=False):
     Maintains user input, decomposed tasks, agent outputs, evidence, and final synthesis.
     """
     user_query: str
+    chat_history: Optional[List[Dict[str, str]]]
     intent: Optional[str]
     location: Optional[Dict[str, Any]]
     time_context: Optional[Dict[str, Any]]

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from enum import Enum
-from app.models.schemas import SourceCitation
+from app.models.schemas import SourceCitation, ChatHistoryItem
 
 class QueryIntent(str, Enum):
     GREETING = "greeting"
@@ -64,6 +64,7 @@ class ExecutionStep(BaseModel):
 class AgentChatRequest(BaseModel):
     message: str
     location: Optional[str] = None
+    history: Optional[List[ChatHistoryItem]] = Field(default_factory=list)
 
 class AgentChatResponse(BaseModel):
     answer: str

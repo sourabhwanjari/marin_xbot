@@ -11,10 +11,16 @@ class ResponseAgent:
     Geospatial, Marine Knowledge, and Risk agents into an actionable, evidence-backed
     marine assessment. Preserves provenance, timestamps, and data freshness.
     """
-    def _generate_with_gemini(self, query: str, context_summary: str) -> Optional[str]:
+    def _generate_with_gemini(
+        self,
+        query: str,
+        context_summary: str,
+        chat_history: Optional[List[Dict[str, str]]] = None
+    ) -> Optional[str]:
         """
         Synthesizes a tailored conversational response using Google Gemini.
         Attempts primary model (gemini-3.5-flash-lite / gemini-3.6-flash) with fallback.
+        Preserves multi-turn conversation context across dialogue turns.
         Returns generated text or None if unavailable.
         """
         import os
@@ -35,18 +41,35 @@ class ResponseAgent:
             seen = set()
             models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
 
+            history_text = ""
+            if chat_history:
+                history_lines = []
+                for turn in chat_history[-6:]:
+                    role = turn.get("role", "user")
+                    content = (turn.get("content") or "").strip()
+                    if not content:
+                        continue
+                    if role in ("assistant", "ai"):
+                        history_lines.append(f"MARINEX AI: {content}")
+                    else:
+                        history_lines.append(f"User: {content}")
+                if history_lines:
+                    history_text = "CONVERSATION HISTORY (maintain continuous multi-turn dialogue context):\n" + "\n".join(history_lines) + "\n\n"
+
             prompt = (
                 "You are MARINEX AI, an expert marine intelligence assistant and coastal decision support system.\n"
                 "You speak with conversational warmth, professional maritime expertise, and sharp safety consciousness for mariners, fishers, and coastal authorities.\n"
                 "Greet the user as Captain if appropriate.\n\n"
-                f"USER QUERY: {query}\n\n"
+                f"{history_text}"
+                f"CURRENT USER QUERY: {query}\n\n"
                 f"MULTI-AGENT TELEMETRY & CONTEXT:\n{context_summary}\n\n"
                 "INSTRUCTIONS:\n"
-                "1. Address the user's specific query directly and conversationally.\n"
-                "2. Ground your answer in the multi-agent telemetry and facts provided above.\n"
-                "3. If assessing voyage or fishing safety, provide clear actionable recommendations (e.g. advice for small craft vs mechanized vessels).\n"
-                "4. Format your response cleanly using GitHub-flavored Markdown (bullet points, bold highlights, emojis where appropriate).\n"
-                "5. Keep the explanation concise, insightful, and easy to read."
+                "1. Address the user's specific query directly and conversationally, maintaining context across previous conversational turns.\n"
+                "2. If the user refers to previous context (e.g. location, previous inquiry, 'what about tomorrow?', 'what about small craft?'), seamlessly connect to previous messages without repeating earlier responses word-for-word.\n"
+                "3. Ground your answer in the multi-agent telemetry and facts provided above.\n"
+                "4. If assessing voyage or fishing safety, provide clear actionable recommendations (e.g. advice for small craft vs mechanized vessels).\n"
+                "5. Format your response cleanly using GitHub-flavored Markdown (bullet points, bold highlights, emojis where appropriate).\n"
+                "6. Keep the explanation concise, insightful, and easy to read without unnecessary repetition."
             )
 
             for model in models_to_try:
@@ -72,7 +95,8 @@ class ResponseAgent:
         geospatial: Optional[Dict[str, Any]] = None,
         rag: Optional[Dict[str, Any]] = None,
         risk: Optional[Dict[str, Any]] = None,
-        errors: Optional[List[str]] = None
+        errors: Optional[List[str]] = None,
+        chat_history: Optional[List[Dict[str, str]]] = None
     ) -> Dict[str, Any]:
         logger.info(f"[ResponseAgent] Generating synthesized response for intent: {intent}")
 
@@ -100,7 +124,8 @@ class ResponseAgent:
         if intent == QueryIntent.GREETING.value:
             gemini_ans = self._generate_with_gemini(
                 query,
-                "Context: The user has greeted or initiated a conversation. Introduce MARINEX AI as an AI-powered Marine Intelligence & Coastal Decision Support assistant. Address user warmly as Captain. Summarize capabilities: Potential Fishing Zones (PFZs) from satellite thermal fronts, real-time wave/swell safety checks, marine weather/wind squall forecasts, and maritime safety rules. Invite queries."
+                "Context: The user has greeted or initiated a conversation. Introduce MARINEX AI as an AI-powered Marine Intelligence & Coastal Decision Support assistant. Address user warmly as Captain. Summarize capabilities: Potential Fishing Zones (PFZs) from satellite thermal fronts, real-time wave/swell safety checks, marine weather/wind squall forecasts, and maritime safety rules. Invite queries.",
+                chat_history=chat_history
             )
             if gemini_ans:
                 answer = gemini_ans
@@ -130,7 +155,8 @@ class ResponseAgent:
         if intent == QueryIntent.EXPLAIN_CONCEPT.value:
             gemini_ans = self._generate_with_gemini(
                 query,
-                f"Explain the marine oceanographic concept requested by the user: '{query}'. Provide clear scientific foundation (e.g. SST thermal fronts, upwelling, chlorophyll-a concentrations, swell energy) and explain its practical benefit for fishing operations and maritime safety."
+                f"Explain the marine oceanographic concept requested by the user: '{query}'. Provide clear scientific foundation (e.g. SST thermal fronts, upwelling, chlorophyll-a concentrations, swell energy) and explain its practical benefit for fishing operations and maritime safety.",
+                chat_history=chat_history
             )
             if gemini_ans:
                 answer = gemini_ans
@@ -243,7 +269,7 @@ class ResponseAgent:
             if rag and rag.get("answer"):
                 safety_context += f"\nRelevant Safety Guidelines: {rag.get('answer')[:300]}"
 
-            gemini_ans = self._generate_with_gemini(query, safety_context)
+            gemini_ans = self._generate_with_gemini(query, safety_context, chat_history=chat_history)
             if gemini_ans:
                 answer = gemini_ans
             else:
@@ -279,16 +305,30 @@ class ResponseAgent:
                 answer = "Weather information is currently unavailable from the external meteorological provider. The remaining marine systems remain active."
             else:
                 evidence.append(f"Weather: {weather.get('wind_speed')} kts wind, {weather.get('storm_risk')} storm risk ({weather.get('source')})")
-                answer = (
-                    f"### Coastal Weather Report for {loc_name}\n"
-                    f"**Time Context**: {time_str.title()}\n\n"
-                    f"• **Air Temperature**: {weather.get('temperature')}°C\n"
-                    f"• **Wind Speed & Direction**: {weather.get('wind_speed')} knots from {weather.get('wind_direction')}\n"
-                    f"• **Precipitation Probability**: {weather.get('rain_probability')}%\n"
-                    f"• **Storm / Squall Risk**: {str(weather.get('storm_risk', 'low')).upper()}\n\n"
-                    f"**Summary**: {weather.get('description')}\n\n"
-                    f"*Source: {weather.get('source')}. Data status: {weather.get('data_status', 'external').upper()}. Last updated: {now_formatted}.*"
+                weather_context = (
+                    f"Sector: {loc_name}\n"
+                    f"Time Horizon: {time_str.title()}\n"
+                    f"Air Temperature: {weather.get('temperature')}°C\n"
+                    f"Wind Speed: {weather.get('wind_speed')} knots from {weather.get('wind_direction')}\n"
+                    f"Precipitation Probability: {weather.get('rain_probability')}%\n"
+                    f"Storm Risk: {str(weather.get('storm_risk', 'low')).upper()}\n"
+                    f"Summary: {weather.get('description')}\n"
+                    f"Source: {weather.get('source')}"
                 )
+                gemini_ans = self._generate_with_gemini(query, weather_context, chat_history=chat_history)
+                if gemini_ans:
+                    answer = gemini_ans
+                else:
+                    answer = (
+                        f"### Coastal Weather Report for {loc_name}\n"
+                        f"**Time Context**: {time_str.title()}\n\n"
+                        f"• **Air Temperature**: {weather.get('temperature')}°C\n"
+                        f"• **Wind Speed & Direction**: {weather.get('wind_speed')} knots from {weather.get('wind_direction')}\n"
+                        f"• **Precipitation Probability**: {weather.get('rain_probability')}%\n"
+                        f"• **Storm / Squall Risk**: {str(weather.get('storm_risk', 'low')).upper()}\n\n"
+                        f"**Summary**: {weather.get('description')}\n\n"
+                        f"*Source: {weather.get('source')}. Data status: {weather.get('data_status', 'external').upper()}. Last updated: {now_formatted}.*"
+                    )
             return {
                 "answer": answer,
                 "risk_level": "MEDIUM" if (weather.get("wind_speed") or 0) > 18 else "LOW",
@@ -304,17 +344,32 @@ class ResponseAgent:
                 answer = "Oceanographic information is currently unavailable from the external ocean provider."
             else:
                 evidence.append(f"Ocean: {ocean.get('wave_height')}m wave height, {ocean.get('sst')}°C SST ({ocean.get('source')})")
-                answer = (
-                    f"### Oceanographic Conditions for {loc_name}\n"
-                    f"**Time Context**: {time_str.title()}\n\n"
-                    f"• **Significant Wave Height**: {ocean.get('wave_height')} meters\n"
-                    f"• **Sea State**: {str(ocean.get('ocean_condition')).title()} (Swell period: {ocean.get('swell_period', 8.5)}s)\n"
-                    f"• **Sea Surface Temperature (SST)**: {ocean.get('sst')}°C\n"
-                    f"• **Chlorophyll-a Concentration**: {ocean.get('chlorophyll')}\n"
-                    f"• **Tidal Trend**: {ocean.get('tide_status', 'Normal')}\n"
-                    f"• **Fishing Suitability**: {ocean.get('suitability', 'Favorable')}\n\n"
-                    f"*Source: {ocean.get('source')}. Data status: {ocean.get('data_status', 'external').upper()}. Last updated: {now_formatted}.*"
+                ocean_context = (
+                    f"Sector: {loc_name}\n"
+                    f"Time Horizon: {time_str.title()}\n"
+                    f"Significant Wave Height: {ocean.get('wave_height')} meters\n"
+                    f"Sea State: {str(ocean.get('ocean_condition')).title()} (Swell period: {ocean.get('swell_period', 8.5)}s)\n"
+                    f"Sea Surface Temperature (SST): {ocean.get('sst')}°C\n"
+                    f"Chlorophyll-a Concentration: {ocean.get('chlorophyll')}\n"
+                    f"Tidal Trend: {ocean.get('tide_status', 'Normal')}\n"
+                    f"Fishing Suitability: {ocean.get('suitability', 'Favorable')}\n"
+                    f"Source: {ocean.get('source')}"
                 )
+                gemini_ans = self._generate_with_gemini(query, ocean_context, chat_history=chat_history)
+                if gemini_ans:
+                    answer = gemini_ans
+                else:
+                    answer = (
+                        f"### Oceanographic Conditions for {loc_name}\n"
+                        f"**Time Context**: {time_str.title()}\n\n"
+                        f"• **Significant Wave Height**: {ocean.get('wave_height')} meters\n"
+                        f"• **Sea State**: {str(ocean.get('ocean_condition')).title()} (Swell period: {ocean.get('swell_period', 8.5)}s)\n"
+                        f"• **Sea Surface Temperature (SST)**: {ocean.get('sst')}°C\n"
+                        f"• **Chlorophyll-a Concentration**: {ocean.get('chlorophyll')}\n"
+                        f"• **Tidal Trend**: {ocean.get('tide_status', 'Normal')}\n"
+                        f"• **Fishing Suitability**: {ocean.get('suitability', 'Favorable')}\n\n"
+                        f"*Source: {ocean.get('source')}. Data status: {ocean.get('data_status', 'external').upper()}. Last updated: {now_formatted}.*"
+                    )
             return {
                 "answer": answer,
                 "risk_level": "MEDIUM" if (ocean.get("wave_height") or 0) > 1.8 else "LOW",
@@ -342,7 +397,7 @@ class ResponseAgent:
                 f"Target Species: Indian Mackerel, Sardine, Carangids, Skipjack Tuna\n"
                 f"Wave Conditions: {ocean.get('wave_height', 1.5) if ocean else 1.5}m"
             )
-            gemini_ans = self._generate_with_gemini(query, pfz_context)
+            gemini_ans = self._generate_with_gemini(query, pfz_context, chat_history=chat_history)
             if gemini_ans:
                 answer = gemini_ans
             else:
@@ -406,7 +461,8 @@ class ResponseAgent:
         # Fallback Generic Marine response
         gemini_ans = self._generate_with_gemini(
             query,
-            f"Sector: {loc_name}. Telemetry: Weather wind {weather.get('wind_speed', 16) if weather else 16} kts, Ocean wave {ocean.get('wave_height', 1.5) if ocean else 1.5}m, SST {ocean.get('sst', 28.0) if ocean else 28.0}°C."
+            f"Sector: {loc_name}. Telemetry: Weather wind {weather.get('wind_speed', 16) if weather else 16} kts, Ocean wave {ocean.get('wave_height', 1.5) if ocean else 1.5}m, SST {ocean.get('sst', 28.0) if ocean else 28.0}°C.",
+            chat_history=chat_history
         )
         if gemini_ans:
             answer = gemini_ans

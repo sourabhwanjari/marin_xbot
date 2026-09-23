@@ -35,18 +35,35 @@ class PlannerAgent:
     the specialized agents required for execution.
     Does NOT answer the user's question.
     """
-    def plan(self, query: str, default_location: Optional[str] = None) -> PlannerOutput:
+    def plan(
+        self,
+        query: str,
+        default_location: Optional[str] = None,
+        chat_history: Optional[List[Dict[str, str]]] = None
+    ) -> PlannerOutput:
         logger.info(f"[Planner] Analyzing query: '{query}'")
         q_lower = query.lower().strip()
 
         # 1. Extract location
-        extracted_loc = default_location or None
+        extracted_loc = None
         for loc in COASTAL_LOCATIONS:
             if re.search(r'\b' + re.escape(loc) + r'\b', q_lower):
                 extracted_loc = loc.title()
                 break
+
+        # If not explicitly mentioned in query, inspect recent chat history backwards
+        if not extracted_loc and chat_history:
+            for item in reversed(chat_history):
+                content = (item.get("content") or "").lower()
+                for loc in COASTAL_LOCATIONS:
+                    if re.search(r'\b' + re.escape(loc) + r'\b', content):
+                        extracted_loc = loc.title()
+                        break
+                if extracted_loc:
+                    break
+
         if not extracted_loc:
-            extracted_loc = "Chennai"  # Default coastal sector
+            extracted_loc = default_location or "Chennai"  # Default coastal sector
 
         # 2. Extract temporal context
         extracted_time = "current"
@@ -95,9 +112,20 @@ class PlannerAgent:
             "safe to go fishing", "is it safe", "it is safe", "safety", "can i go to sea",
             "can we go to sea", "should i go fishing", "venture into sea", "safe to sail",
             "can i sail", "can we sail", "should i sail", "is it safe to sail", "safe to travel",
-            "safe for boating", "safe tomorrow", "safe today", "sailing condition"
+            "safe for boating", "safe tomorrow", "safe today", "sailing condition",
+            "small boat", "small boats", "small craft", "artisanal", "canoe", "dinghy",
+            "mechanized boat", "mechanized vessel", "trawler", "can we venture", "can i venture"
         ]
-        is_safety = any(kw in q_lower for kw in safety_keywords) or (("safe" in q_lower or "safety" in q_lower) and any(w in q_lower for w in ["sail", "sea", "fish", "boat", "go", "venture", "tomorrow", "today", "now"]))
+        is_safety = any(kw in q_lower for kw in safety_keywords) or (("safe" in q_lower or "safety" in q_lower) and any(w in q_lower for w in ["sail", "sea", "fish", "boat", "craft", "go", "venture", "tomorrow", "today", "now"]))
+
+        # Follow-up context inheritance: if query is brief/follow-up, check recent user history
+        is_followup = any(q_lower.startswith(p) for p in ["what about", "how about", "and what about", "and for", "and "]) or len(q_lower.split()) <= 4
+        if is_followup and chat_history and not is_safety:
+            prev_user_queries = [h.get("content", "").lower() for h in chat_history if h.get("role") == "user"]
+            last_query = prev_user_queries[-1] if prev_user_queries else ""
+            if any(kw in last_query for kw in safety_keywords) or "safe" in last_query or "fishing" in last_query:
+                is_safety = True
+
         if is_safety and not any(r in q_lower for r in ["guideline", "rule", "regulation", "law", "sop"]):
             return PlannerOutput(
                 intent=QueryIntent.FISHING_SAFETY,
@@ -138,8 +166,20 @@ class PlannerAgent:
                 ]
             )
 
-        # E. Ocean Conditions (Waves, SST, Chlorophyll)
-        if any(kw in q_lower for kw in ["ocean condition", "wave height", "swell", "sea state", "water temperature", "sst", "chlorophyll"]):
+        # E. Marine Knowledge / Regulations / Guidelines
+        if any(kw in q_lower for kw in ["guideline", "rule", "regulation", "law", "moratorium", "monsoon ban", "mesh size", "penalty", "sop", "document"]):
+            return PlannerOutput(
+                intent=QueryIntent.MARINE_KNOWLEDGE,
+                location=extracted_loc,
+                time=extracted_time,
+                required_agents=["marine_knowledge"],
+                tasks=[
+                    "Search verified marine document knowledge base for regulatory rules and guidelines"
+                ]
+            )
+
+        # F. Ocean Conditions (Waves, SST, Chlorophyll)
+        if any(kw in q_lower for kw in ["ocean condition", "wave height", "swell", "sea state", "water temperature", "sst", "chlorophyll", "wave", "waves"]):
             return PlannerOutput(
                 intent=QueryIntent.OCEAN_CONDITIONS,
                 location=extracted_loc,
@@ -150,8 +190,8 @@ class PlannerAgent:
                 ]
             )
 
-        # F. Weather Inquiry (Wind, Rain, Storms)
-        if any(kw in q_lower for kw in ["weather", "wind speed", "wind direction", "rain", "storm", "cyclone", "lightning", "squall"]):
+        # G. Weather Inquiry (Wind, Rain, Storms)
+        if any(kw in q_lower for kw in ["weather", "wind speed", "wind direction", "wind", "rain", "storm", "cyclone", "lightning", "squall", "visibility"]):
             return PlannerOutput(
                 intent=QueryIntent.WEATHER_INQUIRY,
                 location=extracted_loc,
@@ -159,18 +199,6 @@ class PlannerAgent:
                 required_agents=["weather"],
                 tasks=[
                     f"Retrieve meteorological wind, rain, and storm advisories for {extracted_loc} ({extracted_time})"
-                ]
-            )
-
-        # G. Marine Knowledge / Regulations / Guidelines
-        if any(kw in q_lower for kw in ["guideline", "rule", "regulation", "law", "moratorium", "monsoon ban", "mesh size", "penalty", "sop", "document"]):
-            return PlannerOutput(
-                intent=QueryIntent.MARINE_KNOWLEDGE,
-                location=extracted_loc,
-                time=extracted_time,
-                required_agents=["marine_knowledge"],
-                tasks=[
-                    "Search verified marine document knowledge base for regulatory rules and guidelines"
                 ]
             )
 
