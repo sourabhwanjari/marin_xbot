@@ -90,8 +90,15 @@ class PlannerAgent:
                 tasks=["Inform user that query is outside marine intelligence scope"]
             )
 
-        # D. Fishing Safety (Complex multi-factor inquiry)
-        if any(kw in q_lower for kw in ["safe to go fishing", "is it safe", "safety", "can i go to sea", "should i go fishing", "venture into sea"]):
+        # D. Fishing / Voyage Safety (Complex multi-factor inquiry)
+        safety_keywords = [
+            "safe to go fishing", "is it safe", "it is safe", "safety", "can i go to sea",
+            "can we go to sea", "should i go fishing", "venture into sea", "safe to sail",
+            "can i sail", "can we sail", "should i sail", "is it safe to sail", "safe to travel",
+            "safe for boating", "safe tomorrow", "safe today", "sailing condition"
+        ]
+        is_safety = any(kw in q_lower for kw in safety_keywords) or (("safe" in q_lower or "safety" in q_lower) and any(w in q_lower for w in ["sail", "sea", "fish", "boat", "go", "venture", "tomorrow", "today", "now"]))
+        if is_safety and not any(r in q_lower for r in ["guideline", "rule", "regulation", "law", "sop"]):
             return PlannerOutput(
                 intent=QueryIntent.FISHING_SAFETY,
                 location=extracted_loc,

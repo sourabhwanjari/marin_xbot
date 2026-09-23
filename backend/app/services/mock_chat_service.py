@@ -2,8 +2,45 @@ from app.models.schemas import ChatResponse
 
 class MockChatService:
     @staticmethod
+    def _call_gemini(user_message: str):
+        import os
+        from app.config import settings
+        api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("LLM_API_KEY") or getattr(settings, "GOOGLE_API_KEY", "")
+        if not api_key:
+            return None
+        try:
+            from google import genai
+            client = genai.Client(api_key=api_key)
+            prompt = (
+                "You are MARINEX AI, an expert marine intelligence assistant and coastal decision support system.\n"
+                "Respond conversationally and authoritatively to the user's inquiry regarding marine weather, "
+                "potential fishing zones (PFZ), ocean conditions, or maritime safety.\n\n"
+                f"USER QUERY: {user_message}"
+            )
+            for model in [os.getenv("LLM_MODEL", "gemini-3.5-flash-lite"), "gemini-3.5-flash-lite", "gemini-3.6-flash"]:
+                try:
+                    resp = client.models.generate_content(model=model, contents=prompt)
+                    if resp and resp.text:
+                        return resp.text.strip()
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
     def process_message(user_message: str) -> ChatResponse:
         import re
+        gemini_reply = MockChatService._call_gemini(user_message)
+        if gemini_reply:
+            return ChatResponse(
+                message=gemini_reply,
+                source="gemini-assistant (live)",
+                is_demo=False,
+                suggested_actions=["Find Nearest PFZ", "Check Sea Safety", "View Active Alerts"],
+                related_zones=["Zone Alpha - Chennai Offshore"]
+            )
+
         msg = user_message.lower().strip()
 
         # 1. Greetings & Introductions

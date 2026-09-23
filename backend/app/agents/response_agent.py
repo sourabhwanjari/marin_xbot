@@ -11,6 +11,56 @@ class ResponseAgent:
     Geospatial, Marine Knowledge, and Risk agents into an actionable, evidence-backed
     marine assessment. Preserves provenance, timestamps, and data freshness.
     """
+    def _generate_with_gemini(self, query: str, context_summary: str) -> Optional[str]:
+        """
+        Synthesizes a tailored conversational response using Google Gemini.
+        Attempts primary model (gemini-3.5-flash-lite / gemini-3.6-flash) with fallback.
+        Returns generated text or None if unavailable.
+        """
+        import os
+        from app.config import settings
+        api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("LLM_API_KEY") or getattr(settings, "GOOGLE_API_KEY", "")
+        if not api_key:
+            return None
+
+        try:
+            from google import genai
+            client = genai.Client(api_key=api_key)
+            models_to_try = [
+                os.getenv("LLM_MODEL", "gemini-3.5-flash-lite"),
+                "gemini-3.5-flash-lite",
+                "gemini-3.6-flash",
+                "gemini-2.5-pro"
+            ]
+            seen = set()
+            models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
+
+            prompt = (
+                "You are MARINEX AI, an expert marine intelligence assistant and coastal decision support system.\n"
+                "You speak with conversational warmth, professional maritime expertise, and sharp safety consciousness for mariners, fishers, and coastal authorities.\n"
+                "Greet the user as Captain if appropriate.\n\n"
+                f"USER QUERY: {query}\n\n"
+                f"MULTI-AGENT TELEMETRY & CONTEXT:\n{context_summary}\n\n"
+                "INSTRUCTIONS:\n"
+                "1. Address the user's specific query directly and conversationally.\n"
+                "2. Ground your answer in the multi-agent telemetry and facts provided above.\n"
+                "3. If assessing voyage or fishing safety, provide clear actionable recommendations (e.g. advice for small craft vs mechanized vessels).\n"
+                "4. Format your response cleanly using GitHub-flavored Markdown (bullet points, bold highlights, emojis where appropriate).\n"
+                "5. Keep the explanation concise, insightful, and easy to read."
+            )
+
+            for model in models_to_try:
+                try:
+                    resp = client.models.generate_content(model=model, contents=prompt)
+                    if resp and resp.text:
+                        return resp.text.strip()
+                except Exception as inner_e:
+                    logger.debug(f"[ResponseAgent] Gemini model '{model}' attempt failed: {inner_e}")
+                    continue
+        except Exception as e:
+            logger.warning(f"[ResponseAgent] Gemini LLM generation failed: {e}")
+        return None
+
     def synthesize(
         self,
         query: str,
@@ -48,18 +98,25 @@ class ResponseAgent:
 
         # A. Greeting & Conversational Introduction
         if intent == QueryIntent.GREETING.value:
-            answer = (
-                "Hello Captain! 👋 I am **MARINEX AI**, your marine intelligence and coastal decision assistant.\n\n"
-                "I am equipped to support your voyages with coordinated oceanographic and meteorological telemetry:\n\n"
-                "• 🐟 **Potential Fishing Zones (PFZ)**: Upwelling thermal fronts and chlorophyll-a hotspots\n"
-                "• 🌊 **Wave & Sea State Hazards**: Swell period, significant wave height, and sea state analysis\n"
-                "• 🌤️ **Marine Weather**: Wind speed, squall warnings, rain probability, and storm alerts\n"
-                "• 🛡️ **Voyage Safety & Regulations**: Multi-factor risk evaluations, port fairways, and safety limits\n\n"
-                "How can I assist you today? You can ask me:\n"
-                "- *'Is it safe to go fishing tomorrow near Mumbai?'*\n"
-                "- *'Where is the nearest Potential Fishing Zone?'*\n"
-                "- *'What are the current wave conditions and sea state?'*"
+            gemini_ans = self._generate_with_gemini(
+                query,
+                "Context: The user has greeted or initiated a conversation. Introduce MARINEX AI as an AI-powered Marine Intelligence & Coastal Decision Support assistant. Address user warmly as Captain. Summarize capabilities: Potential Fishing Zones (PFZs) from satellite thermal fronts, real-time wave/swell safety checks, marine weather/wind squall forecasts, and maritime safety rules. Invite queries."
             )
+            if gemini_ans:
+                answer = gemini_ans
+            else:
+                answer = (
+                    "Hello Captain! 👋 I am **MARINEX AI**, your marine intelligence and coastal decision assistant.\n\n"
+                    "I am equipped to support your voyages with coordinated oceanographic and meteorological telemetry:\n\n"
+                    "• 🐟 **Potential Fishing Zones (PFZ)**: Upwelling thermal fronts and chlorophyll-a hotspots\n"
+                    "• 🌊 **Wave & Sea State Hazards**: Swell period, significant wave height, and sea state analysis\n"
+                    "• 🌤️ **Marine Weather**: Wind speed, squall warnings, rain probability, and storm alerts\n"
+                    "• 🛡️ **Voyage Safety & Regulations**: Multi-factor risk evaluations, port fairways, and safety limits\n\n"
+                    "How can I assist you today? You can ask me:\n"
+                    "- *'Is it safe to go fishing tomorrow near Mumbai?'*\n"
+                    "- *'Where is the nearest Potential Fishing Zone?'*\n"
+                    "- *'What are the current wave conditions and sea state?'*"
+                )
             return {
                 "answer": answer,
                 "evidence": ["Maritime assistant conversational greeting and capability overview"],
@@ -71,36 +128,43 @@ class ResponseAgent:
 
         # B. Explanations of Marine Concepts (PFZ, SST, Swell)
         if intent == QueryIntent.EXPLAIN_CONCEPT.value:
-            q_lower = query.lower()
-            if "pfz" in q_lower or "fishing zone" in q_lower:
-                answer = (
-                    "### 🐟 What is a Potential Fishing Zone (PFZ)?\n\n"
-                    "A **Potential Fishing Zone (PFZ)** is an offshore ocean area identified through satellite remote sensing where marine pelagic fish (such as Sardines, Mackerel, Carangids, and Tuna) gather in abundance.\n\n"
-                    "**Scientific Basis**:\n"
-                    "• **Sea Surface Temperature (SST)**: Thermal infrared sensors detect oceanic fronts, eddies, and upwelling zones where cold, nutrient-rich water rises to the surface.\n"
-                    "• **Ocean Color / Chlorophyll-a**: Optical sensors detect high concentrations of phytoplankton, which form the base of the marine food web.\n"
-                    "• **Biological Aggregation**: Plankton blooms attract baitfish, which in turn attract commercial pelagic schools.\n\n"
-                    "**Operational Value for Fishermen**:\n"
-                    "• Reduces search time by **60% to 70%**.\n"
-                    "• Significantly lowers diesel fuel consumption and operational costs.\n"
-                    "• Increases catch per unit effort (CPUE) while enhancing voyage safety."
-                )
-            elif "sst" in q_lower or "sea surface temperature" in q_lower:
-                answer = (
-                    "### 🌡️ Sea Surface Temperature (SST) in Marine Intelligence\n\n"
-                    "**Sea Surface Temperature (SST)** measures the water temperature at the top ocean layer, captured continuously by meteorological and oceanographic satellites.\n\n"
-                    "**Why SST is Critical**:\n"
-                    "• **Fish Distribution**: Most commercial pelagic species (e.g., Mackerel, Tuna) prefer specific narrow temperature windows (typically 27°C - 29°C in tropical seas).\n"
-                    "• **Thermal Gradients**: Sharp transitions between warm and cool water indicate oceanic fronts and upwelling, creating prime feeding grounds.\n"
-                    "• **Cyclone Development**: SSTs above 26.5°C provide the thermal energy required for tropical cyclone formation and intensification."
-                )
+            gemini_ans = self._generate_with_gemini(
+                query,
+                f"Explain the marine oceanographic concept requested by the user: '{query}'. Provide clear scientific foundation (e.g. SST thermal fronts, upwelling, chlorophyll-a concentrations, swell energy) and explain its practical benefit for fishing operations and maritime safety."
+            )
+            if gemini_ans:
+                answer = gemini_ans
             else:
-                answer = (
-                    "### 🌊 Oceanographic Swell & Sea State Dynamics\n\n"
-                    "**Significant Wave Height (Hs)** represents the average height of the highest one-third of waves, while **Swell Period** is the time (in seconds) between successive wave crests.\n\n"
-                    "• **Wind Waves**: Steep, choppy waves generated locally by prevailing surface winds.\n"
-                    "• **Swells**: Long-period waves generated by distant weather systems that travel thousands of kilometers. Long-period swells (>10 seconds) carry enormous kinetic energy and present significant capsizing hazards to small craft near reefs and harbor entrances."
-                )
+                q_lower = query.lower()
+                if "pfz" in q_lower or "fishing zone" in q_lower:
+                    answer = (
+                        "### 🐟 What is a Potential Fishing Zone (PFZ)?\n\n"
+                        "A **Potential Fishing Zone (PFZ)** is an offshore ocean area identified through satellite remote sensing where marine pelagic fish (such as Sardines, Mackerel, Carangids, and Tuna) gather in abundance.\n\n"
+                        "**Scientific Basis**:\n"
+                        "• **Sea Surface Temperature (SST)**: Thermal infrared sensors detect oceanic fronts, eddies, and upwelling zones where cold, nutrient-rich water rises to the surface.\n"
+                        "• **Ocean Color / Chlorophyll-a**: Optical sensors detect high concentrations of phytoplankton, which form the base of the marine food web.\n"
+                        "• **Biological Aggregation**: Plankton blooms attract baitfish, which in turn attract commercial pelagic schools.\n\n"
+                        "**Operational Value for Fishermen**:\n"
+                        "• Reduces search time by **60% to 70%**.\n"
+                        "• Significantly lowers diesel fuel consumption and operational costs.\n"
+                        "• Increases catch per unit effort (CPUE) while enhancing voyage safety."
+                    )
+                elif "sst" in q_lower or "sea surface temperature" in q_lower:
+                    answer = (
+                        "### 🌡️ Sea Surface Temperature (SST) in Marine Intelligence\n\n"
+                        "**Sea Surface Temperature (SST)** measures the water temperature at the top ocean layer, captured continuously by meteorological and oceanographic satellites.\n\n"
+                        "**Why SST is Critical**:\n"
+                        "• **Fish Distribution**: Most commercial pelagic species (e.g., Mackerel, Tuna) prefer specific narrow temperature windows (typically 27°C - 29°C in tropical seas).\n"
+                        "• **Thermal Gradients**: Sharp transitions between warm and cool water indicate oceanic fronts and upwelling, creating prime feeding grounds.\n"
+                        "• **Cyclone Development**: SSTs above 26.5°C provide the thermal energy required for tropical cyclone formation and intensification."
+                    )
+                else:
+                    answer = (
+                        "### 🌊 Oceanographic Swell & Sea State Dynamics\n\n"
+                        "**Significant Wave Height (Hs)** represents the average height of the highest one-third of waves, while **Swell Period** is the time (in seconds) between successive wave crests.\n\n"
+                        "• **Wind Waves**: Steep, choppy waves generated locally by prevailing surface winds.\n"
+                        "• **Swells**: Long-period waves generated by distant weather systems that travel thousands of kilometers. Long-period swells (>10 seconds) carry enormous kinetic energy and present significant capsizing hazards to small craft near reefs and harbor entrances."
+                    )
             return {
                 "answer": answer,
                 "evidence": ["Marine oceanographic educational knowledge synthesis"],
@@ -168,23 +232,37 @@ class ResponseAgent:
             if rag and rag.get("answer"):
                 evidence.append("Regulatory Guidance: Marine safety operating guidelines from verified knowledge base")
 
-            answer = (
-                f"### Marine Safety Assessment for {loc_name}\n"
-                f"**Time Horizon**: {time_str.title()}\n\n"
-                f"**Overall Risk Assessment**: **{risk_lvl}**\n\n"
-                f"**Actionable Recommendation**:\n{rec}\n\n"
-                f"**Key Coastal Conditions**:\n" + "\n".join(conditions_lines) + "\n\n"
-                f"**Risk Factors Identified**:\n" +
-                "\n".join([f"- {rf}" for rf in risk_factors]) + "\n\n"
+            safety_context = (
+                f"Sector: {loc_name}\n"
+                f"Time Horizon: {time_str}\n"
+                f"Overall Risk Assessment: {risk_lvl}\n"
+                f"Actionable Recommendation: {rec}\n"
+                f"Identified Risk Factors: {', '.join(risk_factors)}\n"
+                f"Coastal Telemetry:\n" + "\n".join(conditions_lines)
             )
+            if rag and rag.get("answer"):
+                safety_context += f"\nRelevant Safety Guidelines: {rag.get('answer')[:300]}"
 
-            if rag and rag.get("answer") and len(sources) > 0:
-                answer += f"**Relevant Safety Rule (from Knowledge Base)**:\n{rag.get('answer')[:350]}...\n\n"
+            gemini_ans = self._generate_with_gemini(query, safety_context)
+            if gemini_ans:
+                answer = gemini_ans
+            else:
+                answer = (
+                    f"### Marine Safety Assessment for {loc_name}\n"
+                    f"**Time Horizon**: {time_str.title()}\n\n"
+                    f"**Overall Risk Assessment**: **{risk_lvl}**\n\n"
+                    f"**Actionable Recommendation**:\n{rec}\n\n"
+                    f"**Key Coastal Conditions**:\n" + "\n".join(conditions_lines) + "\n\n"
+                    f"**Risk Factors Identified**:\n" +
+                    "\n".join([f"- {rf}" for rf in risk_factors]) + "\n\n"
+                )
+                if rag and rag.get("answer") and len(sources) > 0:
+                    answer += f"**Relevant Safety Rule (from Knowledge Base)**:\n{rag.get('answer')[:350]}...\n\n"
 
-            answer += (
-                f"*Data status: {overall_status.upper()} — Prototype assessment based on available data. "
-                f"Last updated: {now_formatted}. Not an official safety authorization.*"
-            )
+                answer += (
+                    f"*Data status: {overall_status.upper()} — Prototype assessment based on available data. "
+                    f"Last updated: {now_formatted}. Not an official safety authorization.*"
+                )
 
             return {
                 "answer": answer,
@@ -256,17 +334,29 @@ class ResponseAgent:
             pfz_chlo = nearest_pfz.get("chlorophyll", "High") if nearest_pfz else (ocean.get("chlorophyll", "High") if ocean else "High")
 
             evidence.append("PFZ: INCOIS satellite SST thermal gradient & chlorophyll front advisory")
-            answer = (
-                f"### Potential Fishing Zone (PFZ) Advisory for {loc_name}\n\n"
-                f"Validated oceanographic telemetry identifies active thermal convergence grounds:\n\n"
-                f"• **Nearest Favorable Ground**: **{pfz_name}** (~{pfz_dist} km, bearing {pfz_dir})\n"
-                f"• **Sea Surface Temperature (SST)**: {pfz_sst}°C (Optimum pelagic band)\n"
-                f"• **Chlorophyll-a Concentration**: {pfz_chlo} (Upwelling thermal front detected)\n"
-                f"• **Target Pelagic Species**: Indian Mackerel, Sardine, Carangids, Skipjack Tuna\n"
-                f"• **Wave Conditions**: {ocean.get('wave_height', 1.5) if ocean else 1.5}m swell ({ocean.get('ocean_condition', 'Moderate') if ocean else 'Moderate'})\n\n"
-                f"**Navigation Guidance**: Maintain lookout for coastal vessel traffic fairways. The zone has been pinned on the interactive map.\n\n"
-                f"*Source: INCOIS PFZ Mission / Satellite Earth Observation. Data status: VERIFIED. Last updated: {now_formatted}.*"
+            pfz_context = (
+                f"Location: {loc_name}\n"
+                f"Nearest Favorable PFZ Ground: {pfz_name} (~{pfz_dist} km, bearing {pfz_dir})\n"
+                f"Sea Surface Temperature (SST): {pfz_sst}°C\n"
+                f"Chlorophyll-a: {pfz_chlo} (Thermal front convergence)\n"
+                f"Target Species: Indian Mackerel, Sardine, Carangids, Skipjack Tuna\n"
+                f"Wave Conditions: {ocean.get('wave_height', 1.5) if ocean else 1.5}m"
             )
+            gemini_ans = self._generate_with_gemini(query, pfz_context)
+            if gemini_ans:
+                answer = gemini_ans
+            else:
+                answer = (
+                    f"### Potential Fishing Zone (PFZ) Advisory for {loc_name}\n\n"
+                    f"Validated oceanographic telemetry identifies active thermal convergence grounds:\n\n"
+                    f"• **Nearest Favorable Ground**: **{pfz_name}** (~{pfz_dist} km, bearing {pfz_dir})\n"
+                    f"• **Sea Surface Temperature (SST)**: {pfz_sst}°C (Optimum pelagic band)\n"
+                    f"• **Chlorophyll-a Concentration**: {pfz_chlo} (Upwelling thermal front detected)\n"
+                    f"• **Target Pelagic Species**: Indian Mackerel, Sardine, Carangids, Skipjack Tuna\n"
+                    f"• **Wave Conditions**: {ocean.get('wave_height', 1.5) if ocean else 1.5}m swell ({ocean.get('ocean_condition', 'Moderate') if ocean else 'Moderate'})\n\n"
+                    f"**Navigation Guidance**: Maintain lookout for coastal vessel traffic fairways. The zone has been pinned on the interactive map.\n\n"
+                    f"*Source: INCOIS PFZ Mission / Satellite Earth Observation. Data status: VERIFIED. Last updated: {now_formatted}.*"
+                )
             return {
                 "answer": answer,
                 "risk_level": "LOW",
@@ -314,14 +404,21 @@ class ResponseAgent:
             }
 
         # Fallback Generic Marine response
-        answer = (
-            f"### Marine Assessment for {loc_name}\n\n"
-            f"Based on coordinated multi-agent analysis for your coastal inquiry:\n\n"
-            f"• **Weather**: Wind {weather.get('wind_speed', 16) if weather else 16} kts from {weather.get('wind_direction', 'ENE') if weather else 'ENE'}\n"
-            f"• **Ocean**: Wave height {ocean.get('wave_height', 1.5) if ocean else 1.5}m, SST {ocean.get('sst', 28.0) if ocean else 28.0}°C\n"
-            f"• **Safety**: Exercise standard maritime caution.\n\n"
-            f"*Data status: {overall_status.upper()}. Last updated: {now_formatted}.*"
+        gemini_ans = self._generate_with_gemini(
+            query,
+            f"Sector: {loc_name}. Telemetry: Weather wind {weather.get('wind_speed', 16) if weather else 16} kts, Ocean wave {ocean.get('wave_height', 1.5) if ocean else 1.5}m, SST {ocean.get('sst', 28.0) if ocean else 28.0}°C."
         )
+        if gemini_ans:
+            answer = gemini_ans
+        else:
+            answer = (
+                f"### Marine Assessment for {loc_name}\n\n"
+                f"Based on coordinated multi-agent analysis for your coastal inquiry:\n\n"
+                f"• **Weather**: Wind {weather.get('wind_speed', 16) if weather else 16} kts from {weather.get('wind_direction', 'ENE') if weather else 'ENE'}\n"
+                f"• **Ocean**: Wave height {ocean.get('wave_height', 1.5) if ocean else 1.5}m, SST {ocean.get('sst', 28.0) if ocean else 28.0}°C\n"
+                f"• **Safety**: Exercise standard maritime caution.\n\n"
+                f"*Data status: {overall_status.upper()}. Last updated: {now_formatted}.*"
+            )
         return {
             "answer": answer,
             "risk_level": "MEDIUM",

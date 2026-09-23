@@ -20,6 +20,8 @@ class RagSettings(BaseModel):
     # Provider configuration
     EMBEDDING_PROVIDER: str = os.getenv("EMBEDDING_PROVIDER", "auto")
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "auto")
-    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", os.getenv("LLM_API_KEY", ""))
+    LLM_API_KEY: str = os.getenv("GOOGLE_API_KEY", os.getenv("LLM_API_KEY", ""))
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-3.6-flash")
 
 rag_settings = RagSettings()

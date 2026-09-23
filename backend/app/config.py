@@ -38,8 +38,9 @@ class Settings(BaseModel):
     )
     CORS_ORIGIN_REGEX: str = r"^https://.*\.vercel\.app$"
     
-    # Placeholders for future services (no actual secrets in Phase 1)
-    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", os.getenv("LLM_API_KEY", ""))
+    LLM_API_KEY: str = os.getenv("GOOGLE_API_KEY", os.getenv("LLM_API_KEY", ""))
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-3.6-flash")
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/marinex_db")
     MOSDAC_USERNAME: str = os.getenv("MOSDAC_USERNAME", "")
     MOSDAC_PASSWORD: str = os.getenv("MOSDAC_PASSWORD", "")

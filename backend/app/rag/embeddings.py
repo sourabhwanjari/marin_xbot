@@ -50,21 +50,21 @@ def get_embedding_model() -> Embeddings:
     """
     provider = rag_settings.EMBEDDING_PROVIDER.lower()
 
-    # Check for Google Gemini
-    if provider in ["google", "gemini"] or (provider == "auto" and os.getenv("GOOGLE_API_KEY")):
+    # Check for Google Gemini (when explicitly specified)
+    if provider in ["google", "gemini"]:
         try:
             from langchain_google_genai import GoogleGenerativeAIEmbeddings
             api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("LLM_API_KEY")
             if api_key:
                 return GoogleGenerativeAIEmbeddings(
-                    model="models/embedding-001",
+                    model="models/gemini-embedding-001",
                     google_api_key=api_key
                 )
         except Exception:
             pass
 
-    # Check for OpenAI
-    if provider == "openai" or (provider == "auto" and os.getenv("OPENAI_API_KEY")):
+    # Check for OpenAI (when explicitly specified)
+    if provider == "openai":
         try:
             from langchain_openai import OpenAIEmbeddings
             api_key = os.getenv("OPENAI_API_KEY") or os.getenv("LLM_API_KEY")
@@ -76,5 +76,5 @@ def get_embedding_model() -> Embeddings:
         except Exception:
             pass
 
-    # Resilient local fallback
+    # Resilient deterministic local embeddings (guarantees 100% offline consistency & zero rate limits)
     return DeterministicLocalEmbeddings(dimension=384)

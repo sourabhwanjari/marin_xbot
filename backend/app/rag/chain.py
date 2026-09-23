@@ -24,8 +24,9 @@ def get_llm():
     if provider in ["google", "gemini"] or (provider == "auto" and os.getenv("GOOGLE_API_KEY")):
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
+            model_name = rag_settings.LLM_MODEL or "gemini-3.6-flash"
             return ChatGoogleGenerativeAI(
-                model="gemini-1.5-pro",
+                model=model_name,
                 google_api_key=api_key,
                 temperature=0.2
             )
@@ -95,8 +96,12 @@ class MarineRagChain:
                 # LCEL pipeline
                 context_str = format_docs_for_prompt(docs)
                 messages = self.prompt.format_messages(context=context_str, question=question)
-                response = llm.invoke(messages)
-                answer = response.content if hasattr(response, "content") else str(response)
+                raw_content = response.content if hasattr(response, "content") else response
+                if isinstance(raw_content, list):
+                    text_parts = [part["text"] for part in raw_content if isinstance(part, dict) and "text" in part]
+                    answer = "\n".join(text_parts) if text_parts else str(raw_content)
+                else:
+                    answer = str(raw_content)
             except Exception as e:
                 logger.error(f"[RAG ERROR] LLM generation failed: {e}. Falling back to grounded synthesizer.")
                 answer = synthesize_grounded_fallback(question, docs)
