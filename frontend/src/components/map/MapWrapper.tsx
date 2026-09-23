@@ -7,9 +7,9 @@ import { FishingZone, MarineAlert, UserLocation, HazardArea, RestrictedArea } fr
 const DynamicMarineMap = dynamic(() => import("./MarineMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full min-h-[460px] lg:min-h-[560px] rounded-xl border border-cyan-500/20 bg-marine-950 flex flex-col items-center justify-center text-slate-400 space-y-3">
-      <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-      <span className="text-sm font-medium">Loading Marine GIS Engine & Bathymetry...</span>
+    <div className="w-full h-full min-h-[480px] lg:min-h-[580px] rounded-2xl border border-slate-200 bg-white flex flex-col items-center justify-center text-slate-500 space-y-3 shadow-sm">
+      <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <span className="text-xs font-semibold text-slate-700">Loading Marine GIS Engine & Bathymetry...</span>
     </div>
   ),
 });

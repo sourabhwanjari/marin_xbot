@@ -13,25 +13,25 @@ export const SuggestedQueries: React.FC<SuggestedQueriesProps> = ({
   const suggestions = [
     {
       text: "Where is the nearest Potential Fishing Zone?",
-      icon: <Compass className="w-3.5 h-3.5 text-emerald-400" />,
+      icon: <Compass className="w-3.5 h-3.5 text-emerald-600" />,
     },
     {
       text: "Is it safe to go fishing tomorrow morning near Mumbai?",
-      icon: <Waves className="w-3.5 h-3.5 text-cyan-400" />,
+      icon: <Waves className="w-3.5 h-3.5 text-blue-600" />,
     },
     {
       text: "What are the sea conditions near me?",
-      icon: <CloudSun className="w-3.5 h-3.5 text-blue-400" />,
+      icon: <CloudSun className="w-3.5 h-3.5 text-sky-600" />,
     },
     {
       text: "Are there any cyclone or lightning alerts?",
-      icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />,
+      icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />,
     },
   ];
 
   return (
     <div className="py-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
         Suggested Inquiries
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -40,10 +40,10 @@ export const SuggestedQueries: React.FC<SuggestedQueriesProps> = ({
             key={idx}
             disabled={disabled}
             onClick={() => onSelectQuery(item.text)}
-            className="flex items-center space-x-2 text-left bg-marine-850/70 hover:bg-marine-800/90 border border-slate-700/60 hover:border-cyan-500/40 px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed group"
+            className="flex items-center space-x-2 text-left bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 rounded-xl text-xs text-slate-700 hover:text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
           >
             <span className="flex-shrink-0">{item.icon}</span>
-            <span className="truncate group-hover:text-cyan-300 transition">
+            <span className="truncate group-hover:text-blue-700 transition font-medium">
               {item.text}
             </span>
           </button>
@@ -52,4 +52,5 @@ export const SuggestedQueries: React.FC<SuggestedQueriesProps> = ({
     </div>
   );
 };
+
 export default SuggestedQueries;

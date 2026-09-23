@@ -48,7 +48,7 @@ export const MarineMap: React.FC<MarineMapProps> = ({
       // Position zoom controls in top-left
       L.control.zoom({ position: "topleft" }).addTo(map);
 
-      // CartoDB Dark Matter / Midnight tiles for modern marine-tech styling
+      // CartoDB Voyager tiles (crisp and bright for professional white theme)
       L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
         {
@@ -99,27 +99,27 @@ export const MarineMap: React.FC<MarineMapProps> = ({
     // 1. User Location Marker (Blue)
     const userMarker = L.circleMarker([userLocation.latitude, userLocation.longitude], {
       radius: 9,
-      fillColor: "#00F0FF",
+      fillColor: "#2563EB",
       color: "#FFFFFF",
       weight: 2,
       opacity: 1,
-      fillOpacity: 0.9,
+      fillOpacity: 0.95,
     }).addTo(map);
 
     // User ping radius
     const userAccuracy = L.circle([userLocation.latitude, userLocation.longitude], {
       radius: 2500,
-      fillColor: "#00F0FF",
-      color: "#00F0FF",
-      weight: 1,
+      fillColor: "#3B82F6",
+      color: "#2563EB",
+      weight: 1.5,
       opacity: 0.5,
-      fillOpacity: 0.1,
+      fillOpacity: 0.08,
       dashArray: "4, 6",
     }).addTo(map);
 
     userMarker.bindPopup(`
       <div style="font-family: sans-serif; color: #0f172a; min-width: 180px;">
-        <div style="font-weight: 700; font-size: 13px; color: #0284c7; margin-bottom: 4px;">🔵 User Position</div>
+        <div style="font-weight: 700; font-size: 13px; color: #2563eb; margin-bottom: 4px;">🔵 User Position</div>
         <div style="font-size: 12px; font-weight: 600;">${userLocation.name}</div>
         <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${userLocation.portName}</div>
         <div style="font-size: 11px; margin-top: 4px; font-family: monospace;">Lat: ${userLocation.latitude.toFixed(3)}°, Lon: ${userLocation.longitude.toFixed(3)}°</div>
@@ -152,7 +152,7 @@ export const MarineMap: React.FC<MarineMapProps> = ({
           color: "#FFFFFF",
           weight: 2,
           opacity: 1,
-          fillOpacity: 0.85,
+          fillOpacity: 0.9,
         }).addTo(map);
 
         // Zone Coverage Circle
@@ -201,7 +201,7 @@ export const MarineMap: React.FC<MarineMapProps> = ({
           fillColor: "#EF4444",
           weight: 2,
           opacity: 0.8,
-          fillOpacity: 0.25,
+          fillOpacity: 0.2,
           dashArray: "6, 6",
         }).addTo(map);
 
@@ -218,24 +218,23 @@ export const MarineMap: React.FC<MarineMapProps> = ({
       });
     }
 
-    // 4. Restricted Zones (Dark Polygons)
+    // 4. Restricted Areas (Polygons)
     if (layersEnabled.restricted) {
       restrictedAreas.forEach((area) => {
         const polygon = L.polygon(area.coordinates, {
-          color: "#334155",
-          fillColor: "#1e293b",
+          color: "#475569",
+          fillColor: "#334155",
           weight: 2,
           opacity: 0.9,
-          fillOpacity: 0.45,
-          dashArray: "3, 6",
+          fillOpacity: 0.3,
         }).addTo(map);
 
         polygon.bindPopup(`
           <div style="font-family: sans-serif; color: #0f172a; min-width: 200px;">
             <div style="font-weight: 700; font-size: 12px; color: #475569; margin-bottom: 4px;">⚫ RESTRICTED ZONE</div>
             <div style="font-size: 13px; font-weight: 600;">${area.name}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">${area.description}</div>
-            <div style="font-size: 10px; color: #ef4444; font-weight: 600; margin-top: 4px;">NO FISHING PERMITTED</div>
+            <div style="font-size: 11px; color: #475569; margin-top: 4px;">Type: ${area.type}</div>
+            <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Authority: Naval / Port Security</div>
           </div>
         `);
 
@@ -243,7 +242,7 @@ export const MarineMap: React.FC<MarineMapProps> = ({
       });
     }
 
-    // 5. Marine Alert Point Markers
+    // 5. Active Alert Sector Markers
     if (layersEnabled.alerts) {
       alerts.forEach((alert) => {
         const alertMarker = L.circleMarker([alert.latitude, alert.longitude], {
@@ -252,17 +251,17 @@ export const MarineMap: React.FC<MarineMapProps> = ({
           color: "#FFFFFF",
           weight: 2,
           opacity: 1,
-          fillOpacity: 0.9,
+          fillOpacity: 0.95,
         }).addTo(map);
 
         alertMarker.bindPopup(`
-          <div style="font-family: sans-serif; color: #0f172a; min-width: 210px;">
+          <div style="font-family: sans-serif; color: #0f172a; min-width: 190px;">
             <div style="font-weight: 700; font-size: 12px; color: ${alert.severity === 'HIGH' ? '#dc2626' : '#d97706'};">
               ⚠️ ${alert.type} (${alert.severity})
             </div>
             <div style="font-size: 12px; font-weight: 600; margin-top: 2px;">${alert.location}</div>
             <div style="font-size: 11px; color: #475569; margin-top: 3px;">${alert.short_description}</div>
-            <div style="font-size: 10px; color: #0284c7; margin-top: 4px; font-weight: 600;">Valid: ${alert.time}</div>
+            <div style="font-size: 10px; color: #2563eb; margin-top: 4px; font-weight: 600;">Valid: ${alert.time}</div>
           </div>
         `);
 
@@ -272,46 +271,46 @@ export const MarineMap: React.FC<MarineMapProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full min-h-[460px] lg:min-h-[560px] rounded-xl overflow-hidden border border-cyan-500/20 shadow-marine-card bg-marine-950">
+    <div className="relative w-full h-full min-h-[480px] lg:min-h-[580px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
       {/* Map DOM Element */}
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
       {/* Map Status Overlay / Header */}
-      <div className="absolute top-3 left-12 z-[1000] bg-marine-900/90 backdrop-blur-md border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs flex items-center space-x-2 text-slate-200 shadow-md">
-        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-        <span className="font-semibold text-cyan-400">GIS Engine:</span>
-        <span>PostGIS / GeoJSON Active</span>
+      <div className="absolute top-3 left-12 z-[1000] bg-white/95 backdrop-blur-md border border-slate-200 px-3 py-1.5 rounded-xl text-xs flex items-center space-x-2 text-slate-700 shadow-md">
+        <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
+        <span className="font-bold text-blue-700">GIS Engine:</span>
+        <span className="text-slate-600 font-medium">PostGIS / GeoJSON Active</span>
       </div>
 
       {/* Layer Controls Overlay */}
-      <div className="absolute top-3 right-3 z-[1000] bg-marine-900/90 backdrop-blur-md border border-slate-700/80 px-2.5 py-1.5 rounded-lg text-[11px] flex items-center space-x-2.5 text-slate-300 shadow-md">
-        <span className="font-bold text-cyan-400 hidden sm:inline">Layers:</span>
-        <label className="flex items-center space-x-1 cursor-pointer hover:text-cyan-300 transition">
+      <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-md border border-slate-200 px-3 py-1.5 rounded-xl text-xs flex items-center space-x-3 text-slate-700 shadow-md">
+        <span className="font-bold text-slate-900 hidden sm:inline">Layers:</span>
+        <label className="flex items-center space-x-1.5 cursor-pointer hover:text-blue-700 transition">
           <input
             type="checkbox"
             checked={layersEnabled.pfz}
             onChange={(e) => setLayersEnabled({ ...layersEnabled, pfz: e.target.checked })}
-            className="rounded text-cyan-500 focus:ring-0 cursor-pointer"
+            className="rounded text-blue-600 focus:ring-0 cursor-pointer accent-blue-600"
           />
-          <span>PFZ</span>
+          <span className="font-medium">PFZ</span>
         </label>
-        <label className="flex items-center space-x-1 cursor-pointer hover:text-cyan-300 transition">
+        <label className="flex items-center space-x-1.5 cursor-pointer hover:text-blue-700 transition">
           <input
             type="checkbox"
             checked={layersEnabled.restricted}
             onChange={(e) => setLayersEnabled({ ...layersEnabled, restricted: e.target.checked })}
-            className="rounded text-cyan-500 focus:ring-0 cursor-pointer"
+            className="rounded text-blue-600 focus:ring-0 cursor-pointer accent-blue-600"
           />
-          <span>Restricted</span>
+          <span className="font-medium">Restricted</span>
         </label>
-        <label className="flex items-center space-x-1 cursor-pointer hover:text-cyan-300 transition">
+        <label className="flex items-center space-x-1.5 cursor-pointer hover:text-blue-700 transition">
           <input
             type="checkbox"
             checked={layersEnabled.hazards}
             onChange={(e) => setLayersEnabled({ ...layersEnabled, hazards: e.target.checked })}
-            className="rounded text-cyan-500 focus:ring-0 cursor-pointer"
+            className="rounded text-blue-600 focus:ring-0 cursor-pointer accent-blue-600"
           />
-          <span>Hazards</span>
+          <span className="font-medium">Hazards</span>
         </label>
       </div>
 
@@ -320,4 +319,5 @@ export const MarineMap: React.FC<MarineMapProps> = ({
     </div>
   );
 };
+
 export default MarineMap;
