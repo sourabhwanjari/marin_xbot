@@ -42,7 +42,30 @@ class Settings(BaseModel):
     LLM_API_KEY: str = os.getenv("GOOGLE_API_KEY", os.getenv("LLM_API_KEY", ""))
     LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-3.6-flash")
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/marinex_db")
+
+    # IMD Settings
+    IMD_ENABLED: bool = os.getenv("IMD_ENABLED", "false").lower() in ("true", "1", "yes")
+    IMD_API_KEY: str = os.getenv("IMD_API_KEY", "")
+    IMD_BASE_URL: str = os.getenv("IMD_BASE_URL", "")
+
+    # INCOIS Settings
+    INCOIS_ENABLED: bool = os.getenv("INCOIS_ENABLED", "false").lower() in ("true", "1", "yes")
+    INCOIS_API_KEY: str = os.getenv("INCOIS_API_KEY", "")
+    INCOIS_BASE_URL: str = os.getenv("INCOIS_BASE_URL", "")
+
+    # MOSDAC Settings
+    MOSDAC_ENABLED: bool = os.getenv("MOSDAC_ENABLED", "false").lower() in ("true", "1", "yes")
     MOSDAC_USERNAME: str = os.getenv("MOSDAC_USERNAME", "")
     MOSDAC_PASSWORD: str = os.getenv("MOSDAC_PASSWORD", "")
+    MOSDAC_DATASET_ID: str = os.getenv("MOSDAC_DATASET_ID", "OS3_SST_L3")
+    MOSDAC_BASE_URL: str = os.getenv("MOSDAC_BASE_URL", "https://api.mosdac.gov.in")
+
+    # PostGIS Settings
+    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "")
+    POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", "5432"))
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "")
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "")
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "")
+    POSTGIS_ENABLED: bool = os.getenv("POSTGIS_ENABLED", "false").lower() in ("true", "1", "yes")
 
 settings = Settings()

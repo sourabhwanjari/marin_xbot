@@ -236,13 +236,20 @@ class GeospatialService(DataSource):
         self,
         location_name: str,
         lat: Optional[float] = None,
-        lon: Optional[float] = None
+        lon: Optional[float] = None,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None
     ) -> NormalizedGeospatial:
-        if lat is None or lon is None:
+        actual_lat = lat if lat is not None else latitude
+        actual_lon = lon if lon is not None else longitude
+        if actual_lat is None or actual_lon is None:
             resolved = self.get_coordinates_by_name(location_name)
-            lat = resolved["lat"]
-            lon = resolved["lon"]
+            actual_lat = resolved["lat"]
+            actual_lon = resolved["lon"]
             location_name = resolved["name"]
+
+        lat = actual_lat
+        lon = actual_lon
 
         nearest_port = self.find_nearest_port(lat, lon)
         restr = self.check_restricted_zone(lat, lon)
