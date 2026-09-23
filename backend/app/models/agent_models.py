@@ -4,6 +4,8 @@ from enum import Enum
 from app.models.schemas import SourceCitation
 
 class QueryIntent(str, Enum):
+    GREETING = "greeting"
+    EXPLAIN_CONCEPT = "explain_concept"
     FISHING_SAFETY = "fishing_safety"
     WEATHER_INQUIRY = "weather_inquiry"
     OCEAN_CONDITIONS = "ocean_conditions"

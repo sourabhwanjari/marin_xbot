@@ -47,6 +47,16 @@ def test_planner_agent_intents():
     assert p6.intent == QueryIntent.OUT_OF_SCOPE
     assert len(p6.required_agents) == 0
 
+    # Greeting
+    p7 = planner_agent.plan("Hello there, who are you?")
+    assert p7.intent == QueryIntent.GREETING
+    assert len(p7.required_agents) == 0
+
+    # Explain concept
+    p8 = planner_agent.plan("What is PFZ and how does it work?")
+    assert p8.intent == QueryIntent.EXPLAIN_CONCEPT
+    assert len(p8.required_agents) == 0
+
 # 2. Test Weather Agent
 def test_weather_agent():
     w = weather_agent.run(location="Mumbai", time_context="tomorrow morning")
@@ -107,6 +117,21 @@ def test_response_agent():
     )
     assert "MARINEX AI" in resp_out["answer"]
     assert resp_out["risk_level"] is None
+
+    # Greeting response
+    resp_greet = response_agent.synthesize(
+        query="Hello",
+        intent=QueryIntent.GREETING.value
+    )
+    assert "MARINEX AI" in resp_greet["answer"]
+    assert "Captain" in resp_greet["answer"]
+
+    # Concept response
+    resp_concept = response_agent.synthesize(
+        query="What is PFZ?",
+        intent=QueryIntent.EXPLAIN_CONCEPT.value
+    )
+    assert "Potential Fishing Zone" in resp_concept["answer"]
 
     # Safety response
     resp_safety = response_agent.synthesize(

@@ -56,8 +56,32 @@ class PlannerAgent:
                 break
 
         # 3. Intent Classification & Agent Selection
-        # A. Out of scope / Chitchat
-        if any(kw in q_lower for kw in ["joke", "poem", "who are you", "what is your name", "capital of", "recipe", "song"]):
+        # A. Greetings, Introductions & Conversational Chit-Chat
+        greeting_words = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy"]
+        is_greeting = any(re.search(r'\b' + re.escape(w) + r'\b', q_lower) for w in greeting_words)
+        is_identity = any(kw in q_lower for kw in ["who are you", "what can you do", "what is your name", "how can you help", "help me", "introduce yourself", "thanks", "thank you"])
+        
+        if is_greeting or is_identity:
+            return PlannerOutput(
+                intent=QueryIntent.GREETING,
+                location=None,
+                time=None,
+                required_agents=[],
+                tasks=["Provide a warm conversational welcome and outline marine intelligence capabilities"]
+            )
+
+        # B. Explanations of Marine Concepts (PFZ, SST, Chlorophyll, Swell)
+        if any(kw in q_lower for kw in ["what is pfz", "explain pfz", "how pfz works", "what is sst", "why chlorophyll", "what is swell", "what does swell mean"]):
+            return PlannerOutput(
+                intent=QueryIntent.EXPLAIN_CONCEPT,
+                location=None,
+                time=None,
+                required_agents=[],
+                tasks=["Provide an educational, plain-language explanation of marine oceanography concept"]
+            )
+
+        # C. Out of scope
+        if any(kw in q_lower for kw in ["joke", "poem", "capital of", "recipe", "song", "movie", "cricket", "football"]):
             return PlannerOutput(
                 intent=QueryIntent.OUT_OF_SCOPE,
                 location=None,
@@ -66,7 +90,7 @@ class PlannerAgent:
                 tasks=["Inform user that query is outside marine intelligence scope"]
             )
 
-        # B. Fishing Safety (Complex multi-factor inquiry)
+        # D. Fishing Safety (Complex multi-factor inquiry)
         if any(kw in q_lower for kw in ["safe to go fishing", "is it safe", "safety", "can i go to sea", "should i go fishing", "venture into sea"]):
             return PlannerOutput(
                 intent=QueryIntent.FISHING_SAFETY,

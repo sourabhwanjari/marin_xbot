@@ -99,7 +99,7 @@ export default function DashboardPage() {
             {/* 2-Column Responsive Layout: LEFT = CHATBOT, RIGHT = MAP */}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
               {/* Left Column: Simple Marine Intelligence Chatbot (5 cols on desktop) */}
-              <div className="lg:col-span-5 flex flex-col min-h-[480px] lg:min-h-[580px]">
+              <div className="lg:col-span-5 flex flex-col h-[520px] sm:h-[580px] lg:h-[640px]">
                 <ChatPanel
                   onActionSelect={(action) => {
                     if (action.includes("Zone Alpha")) {
@@ -111,7 +111,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Right Column: Interactive Marine Map (7 cols on desktop) */}
-              <div className="lg:col-span-7 flex flex-col min-h-[480px] lg:min-h-[580px]">
+              <div className="lg:col-span-7 flex flex-col h-[520px] sm:h-[580px] lg:h-[640px]">
                 <MapWrapper
                   userLocation={defaultUserLocation}
                   fishingZones={fishingZones}

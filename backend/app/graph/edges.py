@@ -14,7 +14,7 @@ def route_from_planner(state: MarineAgentState) -> str:
     selected_agents = state.get("selected_agents", [])
     logger.info(f"[LangGraph Router] Routing for intent '{intent}', selected agents: {selected_agents}")
 
-    if intent == QueryIntent.OUT_OF_SCOPE.value:
+    if intent in [QueryIntent.OUT_OF_SCOPE.value, QueryIntent.GREETING.value, QueryIntent.EXPLAIN_CONCEPT.value]:
         return "response"
 
     if intent == QueryIntent.FISHING_SAFETY.value or "risk" in selected_agents:

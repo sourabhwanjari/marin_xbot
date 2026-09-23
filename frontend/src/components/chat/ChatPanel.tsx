@@ -30,10 +30,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onActionSelect }) => {
   ]);
 
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   };
 
   useEffect(() => {
@@ -92,9 +97,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onActionSelect }) => {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-[480px] lg:min-h-[580px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Panel Header */}
-      <div className="p-3.5 border-b border-slate-100 bg-white flex items-center justify-between">
+      <div className="p-3.5 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-2.5">
           <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
             <Bot className="w-5 h-5" />
@@ -133,7 +138,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onActionSelect }) => {
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-3.5 bg-slate-50/50 space-y-2">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto overscroll-contain p-3.5 bg-slate-50/50 space-y-2"
+      >
         {messages.map((msg) => (
           <ChatMessage
             key={msg.id}
@@ -149,12 +157,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onActionSelect }) => {
             <span>Reasoning over satellite SST & oceanographic telemetry...</span>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Suggested Queries & Input Area */}
-      <div className="p-3 bg-white border-t border-slate-100">
+      <div className="p-3 bg-white border-t border-slate-100 shrink-0">
         <SuggestedQueries
           onSelectQuery={handleSendMessage}
           disabled={isLoading}
