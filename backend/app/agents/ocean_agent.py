@@ -11,33 +11,34 @@ class OceanAgent:
     sea states, SST thermal fronts, and swell periods via the Marine Data Gateway.
     """
     def run(self, location: str = "chennai", time_context: str = "current") -> Dict[str, Any]:
-        logger.info(f"[OceanAgent] Executing oceanographic analysis for {location} ({time_context})")
+        logger.info(f"[LANGGRAPH] OceanAgent executing oceanographic analysis for {location} ({time_context})")
         try:
             raw_data = get_ocean_data.invoke({"location": location, "time_context": time_context})
             result = OceanResult(
-                sst=raw_data.get("sst", 28.4),
-                chlorophyll=str(raw_data.get("chlorophyll", "High")),
-                wave_height=raw_data.get("wave_height", 1.8),
-                ocean_condition=raw_data.get("ocean_condition", "moderate"),
-                source=raw_data.get("source", "Open-Meteo Marine / INCOIS"),
+                sst=raw_data.get("sst"),
+                chlorophyll=str(raw_data.get("chlorophyll")) if raw_data.get("chlorophyll") is not None else None,
+                wave_height=raw_data.get("wave_height"),
+                ocean_condition=raw_data.get("ocean_condition"),
+                source=raw_data.get("source", "Ocean Service"),
                 data_status=raw_data.get("data_status", "external")
             )
             data = result.model_dump()
-            data["swell_period"] = raw_data.get("swell_period", 8.5)
-            data["tide_status"] = raw_data.get("tide_status", "Normal")
+            data["swell_period"] = raw_data.get("swell_period")
+            data["tide_status"] = raw_data.get("tide_status")
             data["suitability"] = raw_data.get("suitability", "Favorable")
             data["timestamp"] = raw_data.get("timestamp")
             data["valid_until"] = raw_data.get("valid_until")
+            logger.info(f"[LANGGRAPH] OceanAgent completed for {location}: status={data.get('data_status')}, wave={data.get('wave_height')}, sst={data.get('sst')}")
             return data
         except Exception as e:
             logger.error(f"[OceanAgent] Error executing ocean tools: {e}")
             return {
-                "sst": 28.4,
-                "chlorophyll": "High (1.8 mg/m³)",
-                "wave_height": 1.8,
-                "ocean_condition": "moderate",
-                "source": "Fallback Ocean Service",
-                "data_status": "demo",
+                "sst": None,
+                "chlorophyll": None,
+                "wave_height": None,
+                "ocean_condition": None,
+                "source": "Ocean Service",
+                "data_status": "error",
                 "error": str(e)
             }
 

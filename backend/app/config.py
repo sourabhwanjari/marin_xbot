@@ -52,6 +52,14 @@ class Settings(BaseModel):
     INCOIS_ENABLED: bool = os.getenv("INCOIS_ENABLED", "false").lower() in ("true", "1", "yes")
     INCOIS_API_KEY: str = os.getenv("INCOIS_API_KEY", "")
     INCOIS_BASE_URL: str = os.getenv("INCOIS_BASE_URL", "")
+    INCOIS_USERNAME: str = os.getenv("INCOIS_USERNAME", "")
+    INCOIS_PASSWORD: str = os.getenv("INCOIS_PASSWORD", "")
+
+    # Cache TTL Settings (Seconds)
+    WEATHER_CACHE_TTL: int = int(os.getenv("WEATHER_CACHE_TTL", "900"))
+    OCEAN_CACHE_TTL: int = int(os.getenv("OCEAN_CACHE_TTL", "1800"))
+    PFZ_CACHE_TTL: int = int(os.getenv("PFZ_CACHE_TTL", "3600"))
+    SATELLITE_CACHE_TTL: int = int(os.getenv("SATELLITE_CACHE_TTL", "3600"))
 
     # MOSDAC Settings
     MOSDAC_ENABLED: bool = os.getenv("MOSDAC_ENABLED", "false").lower() in ("true", "1", "yes")

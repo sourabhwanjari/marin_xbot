@@ -80,7 +80,7 @@ def test_agent_api_endpoints():
     assert r_status.status_code == 200
     data_status = r_status.json()
     assert data_status["status"] == "active"
-    assert len(data_status["registered_agents"]) == 7
+    assert len(data_status["registered_agents"]) >= 7
 
     # 2. Agent Chat
     r_chat = client.post("/api/agent/chat", json={

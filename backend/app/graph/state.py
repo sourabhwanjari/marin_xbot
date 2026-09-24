@@ -16,6 +16,7 @@ class MarineAgentState(TypedDict, total=False):
     weather_results: Optional[Dict[str, Any]]
     ocean_results: Optional[Dict[str, Any]]
     geospatial_results: Optional[Dict[str, Any]]
+    satellite_results: Optional[Dict[str, Any]]
     risk_results: Optional[Dict[str, Any]]
     evidence: List[str]
     intermediate_results: List[Dict[str, Any]]

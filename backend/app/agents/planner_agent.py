@@ -72,6 +72,12 @@ class PlannerAgent:
                 extracted_time = normalized
                 break
 
+        def _finish_plan(plan: PlannerOutput) -> PlannerOutput:
+            logger.info(f"[LOCATION] location = {plan.location or 'None'}")
+            logger.info(f"[ROUTER] intent = {plan.intent.value.upper()}")
+            logger.info(f"[ROUTER] selected_agents = {plan.required_agents}")
+            return plan
+
         # 3. Intent Classification & Agent Selection
         # A. Greetings, Introductions & Conversational Chit-Chat
         greeting_words = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy"]
@@ -79,33 +85,33 @@ class PlannerAgent:
         is_identity = any(kw in q_lower for kw in ["who are you", "what can you do", "what is your name", "how can you help", "help me", "introduce yourself", "thanks", "thank you"])
         
         if is_greeting or is_identity:
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.GREETING,
                 location=None,
                 time=None,
                 required_agents=[],
                 tasks=["Provide a warm conversational welcome and outline marine intelligence capabilities"]
-            )
+            ))
 
         # B. Explanations of Marine Concepts (PFZ, SST, Chlorophyll, Swell)
         if any(kw in q_lower for kw in ["what is pfz", "explain pfz", "how pfz works", "what is sst", "why chlorophyll", "what is swell", "what does swell mean"]):
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.EXPLAIN_CONCEPT,
                 location=None,
                 time=None,
                 required_agents=[],
                 tasks=["Provide an educational, plain-language explanation of marine oceanography concept"]
-            )
+            ))
 
         # C. Out of scope
         if any(kw in q_lower for kw in ["joke", "poem", "capital of", "recipe", "song", "movie", "cricket", "football"]):
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.OUT_OF_SCOPE,
                 location=None,
                 time=None,
                 required_agents=[],
                 tasks=["Inform user that query is outside marine intelligence scope"]
-            )
+            ))
 
         # D. Fishing / Voyage Safety (Complex multi-factor inquiry)
         safety_keywords = [
@@ -127,7 +133,7 @@ class PlannerAgent:
                 is_safety = True
 
         if is_safety and not any(r in q_lower for r in ["guideline", "rule", "regulation", "law", "sop"]):
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.FISHING_SAFETY,
                 location=extracted_loc,
                 time=extracted_time,
@@ -139,11 +145,11 @@ class PlannerAgent:
                     "Search marine safety knowledge base for wave/wind operating limits",
                     "Synthesize multi-factor risk assessment (LOW/MEDIUM/HIGH)"
                 ]
-            )
+            ))
 
         # C. Potential Fishing Zone (PFZ) / Fish productivity discovery
         if any(kw in q_lower for kw in ["pfz", "fishing zone", "fishing area", "find areas with high fish", "fish productivity", "where to catch fish", "where is the nearest fishing"]):
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.PFZ_DISCOVERY,
                 location=extracted_loc,
                 time=extracted_time,
@@ -152,11 +158,23 @@ class PlannerAgent:
                     f"Identify SST thermal fronts and chlorophyll convergence zones near {extracted_loc}",
                     f"Calculate distances to nearest favorable fishing zones from {extracted_loc} port"
                 ]
-            )
+            ))
 
-        # D. Restricted Zones / Boundaries
+        # D. Satellite Earth Observation (MOSDAC / Remote Sensing)
+        if any(kw in q_lower for kw in ["satellite", "mosdac", "insat", "oceansat", "remote sensing", "earth observation"]):
+            return _finish_plan(PlannerOutput(
+                intent=QueryIntent.SATELLITE_DATA,
+                location=extracted_loc,
+                time=extracted_time,
+                required_agents=["satellite"],
+                tasks=[
+                    f"Retrieve satellite earth observation and remote sensing telemetry for {extracted_loc}"
+                ]
+            ))
+
+        # E. Restricted Zones / Boundaries
         if any(kw in q_lower for kw in ["restricted", "prohibited", "boundary", "naval channel", "anchorage", "sanctuary", "marine protected"]):
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.RESTRICTED_ZONES,
                 location=extracted_loc,
                 time=extracted_time,
@@ -164,11 +182,11 @@ class PlannerAgent:
                 tasks=[
                     f"Query spatial boundaries for restricted fairways and marine reserves near {extracted_loc}"
                 ]
-            )
+            ))
 
-        # E. Marine Knowledge / Regulations / Guidelines
+        # F. Marine Knowledge / Regulations / Guidelines
         if any(kw in q_lower for kw in ["guideline", "rule", "regulation", "law", "moratorium", "monsoon ban", "mesh size", "penalty", "sop", "document"]):
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.MARINE_KNOWLEDGE,
                 location=extracted_loc,
                 time=extracted_time,
@@ -176,11 +194,11 @@ class PlannerAgent:
                 tasks=[
                     "Search verified marine document knowledge base for regulatory rules and guidelines"
                 ]
-            )
+            ))
 
-        # F. Ocean Conditions (Waves, SST, Chlorophyll)
+        # G. Ocean Conditions (Waves, SST, Chlorophyll)
         if any(kw in q_lower for kw in ["ocean condition", "wave height", "swell", "sea state", "water temperature", "sst", "chlorophyll", "wave", "waves"]):
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.OCEAN_CONDITIONS,
                 location=extracted_loc,
                 time=extracted_time,
@@ -188,11 +206,11 @@ class PlannerAgent:
                 tasks=[
                     f"Retrieve hydrodynamic wave and SST telemetry for {extracted_loc} ({extracted_time})"
                 ]
-            )
+            ))
 
-        # G. Weather Inquiry (Wind, Rain, Storms)
+        # H. Weather Inquiry (Wind, Rain, Storms)
         if any(kw in q_lower for kw in ["weather", "wind speed", "wind direction", "wind", "rain", "storm", "cyclone", "lightning", "squall", "visibility"]):
-            return PlannerOutput(
+            return _finish_plan(PlannerOutput(
                 intent=QueryIntent.WEATHER_INQUIRY,
                 location=extracted_loc,
                 time=extracted_time,
@@ -200,10 +218,10 @@ class PlannerAgent:
                 tasks=[
                     f"Retrieve meteorological wind, rain, and storm advisories for {extracted_loc} ({extracted_time})"
                 ]
-            )
+            ))
 
         # Default fallback: General Marine assessment
-        return PlannerOutput(
+        return _finish_plan(PlannerOutput(
             intent=QueryIntent.GENERAL_MARINE,
             location=extracted_loc,
             time=extracted_time,
@@ -211,6 +229,6 @@ class PlannerAgent:
             tasks=[
                 f"Gather comprehensive marine conditions and guidelines for {extracted_loc}"
             ]
-        )
+        ))
 
 planner_agent = PlannerAgent()

@@ -86,34 +86,39 @@ class MarineDataGateway:
         cache_key = f"weather:{loc.latitude:.2f}:{loc.longitude:.2f}:{ctx}:{provider_name or 'default'}"
         cached = self.cache.get(cache_key, category="weather")
         if cached:
-            logger.info(f"[Gateway] [Weather] Cache HIT for key '{cache_key}'")
+            logger.info(f"[GATEWAY] method = get_weather | Cache HIT for key '{cache_key}'")
+            logger.info(f"[MARINE_DATA] received = True | status = {cached.status.value} (cached)")
             return cached
+
+        logger.info(f"[GATEWAY] method = get_weather | location = {loc.name} ({loc.latitude:.3f}, {loc.longitude:.3f}) [{ctx}]")
 
         # Select provider from registry
         provider = self.registry.get_provider_by_name(provider_name) if provider_name else self.registry.get_provider(ProviderCapability.WEATHER, prefer_configured=prefer_configured)
-        logger.info(f"[Gateway] [Weather] Provider selected: '{provider.provider_name}' | Query: ({loc.latitude:.3f}, {loc.longitude:.3f}) [{ctx}]")
+        logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = weather | status = {provider.get_health().connection_status}")
 
         t0 = time.time()
         try:
             resp = provider.get_weather(location=loc, time_window=tw)
             duration = time.time() - t0
-            logger.info(f"[Gateway] [Weather] Completed in {duration:.2f}s | Provider: {resp.provider} | Status: {resp.status.value}")
+            logger.info(f"[PROVIDER] provider = {resp.provider} | status = {resp.status.value} (completed in {duration:.2f}s)")
+            logger.info(f"[MARINE_DATA] received = True | status = {resp.status.value} | parameter = {resp.parameter}")
 
             # If primary provider is not configured or unavailable and user hasn't forced a specific provider,
             # query secondary fallback provider for operational continuity in development/demo.
             if resp.status in (DataStatus.NOT_CONFIGURED, DataStatus.UNAVAILABLE) and not provider_name:
                 fallback_provider = self.registry.get_provider_by_name("Open-Meteo")
                 if fallback_provider and fallback_provider != provider:
-                    logger.info(f"[Gateway] [Weather] Primary returned {resp.status.value}. Querying secondary fallback '{fallback_provider.provider_name}'")
+                    logger.info(f"[GATEWAY] Primary returned {resp.status.value}. Querying secondary fallback '{fallback_provider.provider_name}'")
                     fallback_resp = fallback_provider.get_weather(location=loc, time_window=tw)
-                    # Cache fallback result
+                    logger.info(f"[PROVIDER] provider = {fallback_resp.provider} | status = {fallback_resp.status.value}")
+                    logger.info(f"[MARINE_DATA] received = True | status = {fallback_resp.status.value} (fallback)")
                     self.cache.set(cache_key, fallback_resp, category="weather")
                     return fallback_resp
 
             self.cache.set(cache_key, resp, category="weather")
             return resp
         except Exception as e:
-            logger.error(f"[Gateway] [Weather] Request failed on provider '{provider.provider_name}': {e}")
+            logger.error(f"[GATEWAY] Request failed on provider '{provider.provider_name}': {e}")
             retrieved_at = datetime.now(timezone.utc).isoformat()
             err_resp = MarineDataResponse(
                 status=DataStatus.ERROR,
@@ -156,31 +161,37 @@ class MarineDataGateway:
         cache_key = f"ocean:{loc.latitude:.2f}:{loc.longitude:.2f}:{ctx}:{provider_name or 'default'}"
         cached = self.cache.get(cache_key, category="ocean")
         if cached:
-            logger.info(f"[Gateway] [Ocean] Cache HIT for key '{cache_key}'")
+            logger.info(f"[GATEWAY] method = get_ocean_conditions | Cache HIT for key '{cache_key}'")
+            logger.info(f"[MARINE_DATA] received = True | status = {cached.status.value} (cached)")
             return cached
 
+        logger.info(f"[GATEWAY] method = get_ocean_conditions | location = {loc.name} ({loc.latitude:.3f}, {loc.longitude:.3f}) [{ctx}]")
+
         provider = self.registry.get_provider_by_name(provider_name) if provider_name else self.registry.get_provider(ProviderCapability.OCEAN, prefer_configured=prefer_configured)
-        logger.info(f"[Gateway] [Ocean] Provider selected: '{provider.provider_name}' | Query: ({loc.latitude:.3f}, {loc.longitude:.3f}) [{ctx}]")
+        logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = ocean | status = {provider.get_health().connection_status}")
 
         t0 = time.time()
         try:
             resp = provider.get_ocean_conditions(location=loc, time_window=tw)
             duration = time.time() - t0
-            logger.info(f"[Gateway] [Ocean] Completed in {duration:.2f}s | Provider: {resp.provider} | Status: {resp.status.value}")
+            logger.info(f"[PROVIDER] provider = {resp.provider} | status = {resp.status.value} (completed in {duration:.2f}s)")
+            logger.info(f"[MARINE_DATA] received = True | status = {resp.status.value} | parameter = {resp.parameter}")
 
             # Fallback to secondary provider if unconfigured
             if resp.status in (DataStatus.NOT_CONFIGURED, DataStatus.UNAVAILABLE) and not provider_name:
                 fallback_provider = self.registry.get_provider_by_name("Open-Meteo-Marine")
                 if fallback_provider and fallback_provider != provider:
-                    logger.info(f"[Gateway] [Ocean] Primary returned {resp.status.value}. Querying secondary fallback '{fallback_provider.provider_name}'")
+                    logger.info(f"[GATEWAY] Primary returned {resp.status.value}. Querying secondary fallback '{fallback_provider.provider_name}'")
                     fallback_resp = fallback_provider.get_ocean_conditions(location=loc, time_window=tw)
+                    logger.info(f"[PROVIDER] provider = {fallback_resp.provider} | status = {fallback_resp.status.value}")
+                    logger.info(f"[MARINE_DATA] received = True | status = {fallback_resp.status.value} (fallback)")
                     self.cache.set(cache_key, fallback_resp, category="ocean")
                     return fallback_resp
 
             self.cache.set(cache_key, resp, category="ocean")
             return resp
         except Exception as e:
-            logger.error(f"[Gateway] [Ocean] Request failed on provider '{provider.provider_name}': {e}")
+            logger.error(f"[GATEWAY] Request failed on provider '{provider.provider_name}': {e}")
             retrieved_at = datetime.now(timezone.utc).isoformat()
             return MarineDataResponse(
                 status=DataStatus.ERROR,
@@ -218,9 +229,15 @@ class MarineDataGateway:
         loc = self._resolve_location(location, latitude, longitude, location_name)
         tw = time_window if isinstance(time_window, TimeWindow) else TimeWindow(context="current")
 
+        logger.info(f"[GATEWAY] method = get_pfz | location = {loc.name} ({loc.latitude:.3f}, {loc.longitude:.3f})")
+
         provider = self.registry.get_provider(ProviderCapability.PFZ)
-        logger.info(f"[Gateway] [PFZ] Provider selected: '{provider.provider_name}' for {loc.name}")
-        return provider.get_pfz(location=loc, time_window=tw)
+        logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = pfz | status = {provider.get_health().connection_status}")
+        resp = provider.get_pfz(location=loc, time_window=tw)
+        status_val = resp.status.value if hasattr(resp, "status") else "legacy"
+        logger.info(f"[PROVIDER] provider = {getattr(resp, 'provider', provider.provider_name)} | status = {status_val}")
+        logger.info(f"[MARINE_DATA] received = True | method = get_pfz | status = {status_val}")
+        return resp
 
     def get_satellite_data(
         self,
@@ -232,9 +249,13 @@ class MarineDataGateway:
         Retrieves satellite earth observation telemetry from ISRO MOSDAC.
         Strictly returns NOT_CONFIGURED when MOSDAC credentials are not present.
         """
+        logger.info(f"[GATEWAY] method = get_satellite_data | location = {location.name if location else 'Regional Sector'} | product = {product_name}")
         provider = self.registry.get_provider(ProviderCapability.SATELLITE)
-        logger.info(f"[Gateway] [Satellite] Provider selected: '{provider.provider_name}' for product '{product_name}'")
-        return provider.get_satellite_data(location=location, product=product_name, time_window=time_window)
+        logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = satellite | status = {provider.get_health().connection_status}")
+        resp = provider.get_satellite_data(location=location, product=product_name, time_window=time_window)
+        logger.info(f"[PROVIDER] provider = {resp.provider} | status = {resp.status.value}")
+        logger.info(f"[MARINE_DATA] received = True | method = get_satellite_data | status = {resp.status.value}")
+        return resp
 
     def get_geospatial_context(
         self,
@@ -253,9 +274,13 @@ class MarineDataGateway:
         else:
             loc = self._resolve_location(latitude=latitude, longitude=longitude)
 
+        logger.info(f"[GATEWAY] method = get_geospatial_context | location = {loc.name} ({loc.latitude:.3f}, {loc.longitude:.3f})")
         provider = self.registry.get_provider(ProviderCapability.GEOSPATIAL)
-        logger.info(f"[Gateway] [Geospatial] Provider selected: '{provider.provider_name}' for {loc.name}")
-        return provider.get_geospatial_data(location=loc)
+        logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = geospatial | status = {provider.get_health().connection_status}")
+        resp = provider.get_geospatial_data(location=loc)
+        logger.info(f"[PROVIDER] provider = {resp.provider} | status = {resp.status.value}")
+        logger.info(f"[MARINE_DATA] received = True | method = get_geospatial_context | status = {resp.status.value}")
+        return resp
 
     def get_geospatial_information(
         self,
@@ -315,5 +340,11 @@ class MarineDataGateway:
                 "providers": [p.model_dump() for p in providers_health]
             }
         )
+
+    def get_providers_status(self) -> Dict[str, Dict[str, str]]:
+        """
+        Phase 5B Standard Provider Connectivity Report for GET /api/marine/providers/status.
+        """
+        return self.registry.get_providers_status_dict()
 
 marine_gateway = MarineDataGateway()

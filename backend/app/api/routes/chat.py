@@ -1,6 +1,9 @@
+import logging
 from fastapi import APIRouter
 from app.models.schemas import ChatRequest, ChatResponse
 from app.graph.workflow import run_marine_workflow
+
+logger = logging.getLogger("marinex.api.chat")
 
 router = APIRouter(tags=["Conversational Intelligence"])
 
@@ -12,7 +15,9 @@ async def chat_interaction(request: ChatRequest):
     (Planner -> Specialized Agents -> Risk Assessment -> Response Synthesis).
     """
     history = [h.model_dump() if hasattr(h, "model_dump") else h.dict() for h in request.history] if request.history else []
+    logger.info(f"[CHAT] query = {request.message} | history_len = {len(history)}")
     result = run_marine_workflow(query=request.message, chat_history=history)
+    logger.info(f"[CHAT] Completed response for query = '{request.message[:40]}' | status = {result.get('data_status')}")
 
     suggested_actions = ["Check Current Sea State", "View Active Alerts"]
     if result.get("risk_level") in ["MEDIUM", "HIGH"]:

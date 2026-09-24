@@ -90,7 +90,7 @@ class GeospatialData(BaseModel):
     protected_zone: bool = False
     distance_from_coast_km: float = 0.0
     nearest_hazard: Optional[str] = None
-    restriction_details: Optional[str] = None
+    restriction_details: Optional[Any] = None
     map_data: Optional[Dict[str, Any]] = None
 
 class HazardData(BaseModel):

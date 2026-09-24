@@ -13,6 +13,7 @@ class QueryIntent(str, Enum):
     RESTRICTED_ZONES = "restricted_zones"
     MARINE_KNOWLEDGE = "marine_knowledge"
     GENERAL_MARINE = "general_marine"
+    SATELLITE_DATA = "satellite_data"
     OUT_OF_SCOPE = "out_of_scope"
 
 class PlannerOutput(BaseModel):
@@ -23,19 +24,19 @@ class PlannerOutput(BaseModel):
     tasks: List[str] = Field(default_factory=list)
 
 class WeatherResult(BaseModel):
-    temperature: float
-    wind_speed: float
-    wind_direction: str
-    rain_probability: int
-    storm_risk: str
+    temperature: Optional[float] = None
+    wind_speed: Optional[float] = None
+    wind_direction: Optional[str] = None
+    rain_probability: Optional[int] = None
+    storm_risk: Optional[str] = None
     source: str = "Demo Weather Service (IMD/GFS simulated)"
     data_status: str = "demo"
 
 class OceanResult(BaseModel):
-    sst: float
-    chlorophyll: str
-    wave_height: float
-    ocean_condition: str
+    sst: Optional[float] = None
+    chlorophyll: Optional[str] = None
+    wave_height: Optional[float] = None
+    ocean_condition: Optional[str] = None
     source: str = "Demo Ocean Service (INCOIS simulated)"
     data_status: str = "demo"
 
@@ -77,6 +78,7 @@ class AgentChatResponse(BaseModel):
     weather: Optional[Dict[str, Any]] = None
     ocean: Optional[Dict[str, Any]] = None
     geospatial: Optional[Dict[str, Any]] = None
+    satellite: Optional[Dict[str, Any]] = None
     risk: Optional[Dict[str, Any]] = None
     map_data: Optional[Dict[str, Any]] = None
     execution_steps: List[ExecutionStep] = Field(default_factory=list)

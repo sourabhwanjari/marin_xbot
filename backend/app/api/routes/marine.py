@@ -146,3 +146,18 @@ async def get_gateway_status():
     NEVER exposes API keys, tokens, or credentials.
     """
     return marine_gateway.get_gateway_status()
+
+@router.get("/providers/status")
+async def get_providers_status():
+    """
+    Phase 5B: Reports runtime connectivity status of all external marine data providers.
+    Returns:
+    {
+      "imd": {"status": "NOT_CONFIGURED" | "CONNECTED" | "UNAVAILABLE"},
+      "incois_ocean": {"status": "NOT_CONFIGURED" | "CONNECTED" | "UNAVAILABLE"},
+      "incois_pfz": {"status": "CONNECTED" | "NOT_CONFIGURED"},
+      "mosdac": {"status": "NOT_CONFIGURED" | "CONNECTED"},
+      "postgis": {"status": "CONNECTED"}
+    }
+    """
+    return marine_gateway.get_providers_status()

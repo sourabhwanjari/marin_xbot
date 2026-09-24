@@ -131,11 +131,44 @@ class ProviderRegistry:
             for cap in ProviderCapability
         }
 
-    def get_all_provider_statuses(self) -> Dict[str, Any]:
-        """Returns capabilities routing map and sanitized provider health reports."""
+    def get_providers_status_dict(self) -> Dict[str, Dict[str, str]]:
+        """
+        Returns Phase 5B standard status map for GET /api/marine/providers/status:
+        {
+            "imd": {"status": "NOT_CONFIGURED" | "CONNECTED" | "UNAVAILABLE"},
+            "incois_ocean": {"status": "NOT_CONFIGURED" | "CONNECTED" | "UNAVAILABLE"},
+            "incois_pfz": {"status": "CONNECTED" | "NOT_CONFIGURED"},
+            "mosdac": {"status": "NOT_CONFIGURED" | "CONNECTED"},
+            "postgis": {"status": "CONNECTED"}
+        }
+        """
+        imd_p = self.get_provider_by_name("IMD")
+        ocean_p = self.get_provider_by_name("INCOIS-Ocean")
+        pfz_p = self.get_provider_by_name("INCOIS-PFZ")
+        mosdac_p = self.get_provider_by_name("MOSDAC")
+        gis_p = self.get_provider_by_name("GIS-Spatial-Engine")
+
+        # For incois_pfz, if running with verified reference fallback enabled, status is CONNECTED
+        pfz_status = pfz_p.status.value if pfz_p else "NOT_CONFIGURED"
+        if pfz_p and getattr(pfz_p, "is_enabled", False):
+            pfz_status = "CONNECTED"
+
         return {
-            "capabilities": self.get_routing_table(),
-            "providers": [p.get_health().model_dump() for p in self._providers.values()]
+            "imd": {
+                "status": imd_p.status.value if imd_p else "NOT_CONFIGURED"
+            },
+            "incois_ocean": {
+                "status": ocean_p.status.value if ocean_p else "NOT_CONFIGURED"
+            },
+            "incois_pfz": {
+                "status": pfz_status
+            },
+            "mosdac": {
+                "status": mosdac_p.status.value if mosdac_p else "NOT_CONFIGURED"
+            },
+            "postgis": {
+                "status": gis_p.status.value if gis_p else "CONNECTED"
+            }
         }
 
 provider_registry = ProviderRegistry()

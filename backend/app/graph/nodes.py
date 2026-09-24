@@ -5,6 +5,7 @@ from app.agents.planner_agent import planner_agent
 from app.agents.weather_agent import weather_agent
 from app.agents.ocean_agent import ocean_agent
 from app.agents.geospatial_agent import geospatial_agent
+from app.agents.satellite_agent import satellite_agent
 from app.agents.marine_knowledge_agent import marine_knowledge_agent
 from app.agents.risk_agent import risk_agent
 from app.agents.response_agent import response_agent
@@ -100,9 +101,32 @@ def geospatial_node(state: MarineAgentState) -> MarineAgentState:
 
     return state
 
+def satellite_node(state: MarineAgentState) -> MarineAgentState:
+    """Satellite Node: Retrieves MOSDAC / ISRO satellite earth observation telemetry."""
+    logger.info("[LANGGRAPH] Executing satellite_node")
+    loc = state.get("location", {}).get("name", "Chennai")
+
+    try:
+        res = satellite_agent.run(location=loc, product="sst")
+        state["satellite_results"] = res
+        add_step(
+            state,
+            agent="satellite",
+            status="completed",
+            details=f"Provider: {res.get('provider')} | Status: {res.get('data_status')}"
+        )
+    except Exception as e:
+        logger.error(f"[LANGGRAPH] Satellite node error: {e}")
+        errors = state.get("errors", [])
+        errors.append(f"Satellite agent error: {str(e)}")
+        state["errors"] = errors
+        add_step(state, agent="satellite", status="failed", details=str(e))
+
+    return state
+
 def marine_knowledge_node(state: MarineAgentState) -> MarineAgentState:
     """Marine Knowledge Node: Retrieves verified guidelines & citations from RAG."""
-    logger.info("[LangGraph] Executing marine_knowledge_node")
+    logger.info("[LANGGRAPH] Executing marine_knowledge_node")
     query = state.get("user_query", "")
 
     try:
@@ -111,7 +135,7 @@ def marine_knowledge_node(state: MarineAgentState) -> MarineAgentState:
         sources_cnt = len(res.get("sources", []))
         add_step(state, agent="marine_knowledge", status="completed", details=f"Retrieved {sources_cnt} citations")
     except Exception as e:
-        logger.error(f"[LangGraph] Marine knowledge node error: {e}")
+        logger.error(f"[LANGGRAPH] Marine knowledge node error: {e}")
         errors = state.get("errors", [])
         errors.append(f"RAG agent error: {str(e)}")
         state["errors"] = errors
@@ -121,7 +145,7 @@ def marine_knowledge_node(state: MarineAgentState) -> MarineAgentState:
 
 def risk_node(state: MarineAgentState) -> MarineAgentState:
     """Risk Node: Synthesizes multi-factor evidence into a composite risk level."""
-    logger.info("[LangGraph] Executing risk_node")
+    logger.info("[LANGGRAPH] Executing risk_node")
     weather = state.get("weather_results")
     ocean = state.get("ocean_results")
     geospatial = state.get("geospatial_results")
@@ -132,7 +156,7 @@ def risk_node(state: MarineAgentState) -> MarineAgentState:
         state["risk_results"] = res
         add_step(state, agent="risk", status="completed", details=f"Risk: {res.get('risk_level')}")
     except Exception as e:
-        logger.error(f"[LangGraph] Risk node error: {e}")
+        logger.error(f"[LANGGRAPH] Risk node error: {e}")
         errors = state.get("errors", [])
         errors.append(f"Risk agent error: {str(e)}")
         state["errors"] = errors
@@ -142,7 +166,7 @@ def risk_node(state: MarineAgentState) -> MarineAgentState:
 
 def response_node(state: MarineAgentState) -> MarineAgentState:
     """Response Synthesizer Node: Produces final structured answer and evidence."""
-    logger.info("[LangGraph] Executing response_node")
+    logger.info("[LANGGRAPH] Executing response_node")
     query = state.get("user_query", "")
     intent = state.get("intent")
     loc = state.get("location")
@@ -150,6 +174,7 @@ def response_node(state: MarineAgentState) -> MarineAgentState:
     weather = state.get("weather_results")
     ocean = state.get("ocean_results")
     geospatial = state.get("geospatial_results")
+    satellite = state.get("satellite_results")
     rag = state.get("rag_results", [{}])[0] if state.get("rag_results") else None
     risk = state.get("risk_results")
     errors = state.get("errors")
@@ -163,6 +188,7 @@ def response_node(state: MarineAgentState) -> MarineAgentState:
         weather=weather,
         ocean=ocean,
         geospatial=geospatial,
+        satellite=satellite,
         rag=rag,
         risk=risk,
         errors=errors,

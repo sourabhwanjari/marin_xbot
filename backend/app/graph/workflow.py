@@ -7,6 +7,7 @@ from app.graph.nodes import (
     planner_node,
     weather_node,
     ocean_node,
+    satellite_node,
     geospatial_node,
     marine_knowledge_node,
     risk_node,
@@ -16,6 +17,7 @@ from app.graph.edges import (
     route_from_planner,
     route_after_weather,
     route_after_ocean,
+    route_after_satellite,
     route_after_geospatial,
     route_after_knowledge,
 )
@@ -32,6 +34,7 @@ def build_marine_graph() -> StateGraph:
     workflow.add_node("planner", planner_node)
     workflow.add_node("weather", weather_node)
     workflow.add_node("ocean", ocean_node)
+    workflow.add_node("satellite", satellite_node)
     workflow.add_node("geospatial", geospatial_node)
     workflow.add_node("marine_knowledge", marine_knowledge_node)
     workflow.add_node("risk", risk_node)
@@ -46,6 +49,7 @@ def build_marine_graph() -> StateGraph:
         {
             "weather": "weather",
             "ocean": "ocean",
+            "satellite": "satellite",
             "geospatial": "geospatial",
             "marine_knowledge": "marine_knowledge",
             "response": "response",
@@ -57,6 +61,7 @@ def build_marine_graph() -> StateGraph:
         route_after_weather,
         {
             "ocean": "ocean",
+            "satellite": "satellite",
             "geospatial": "geospatial",
             "marine_knowledge": "marine_knowledge",
             "risk": "risk",
@@ -67,6 +72,18 @@ def build_marine_graph() -> StateGraph:
     workflow.add_conditional_edges(
         "ocean",
         route_after_ocean,
+        {
+            "satellite": "satellite",
+            "geospatial": "geospatial",
+            "marine_knowledge": "marine_knowledge",
+            "risk": "risk",
+            "response": "response",
+        }
+    )
+
+    workflow.add_conditional_edges(
+        "satellite",
+        route_after_satellite,
         {
             "geospatial": "geospatial",
             "marine_knowledge": "marine_knowledge",
@@ -112,7 +129,7 @@ def run_marine_workflow(
     Executes the LangGraph multi-agent orchestration workflow for a marine query.
     Returns structured results ready for API responses.
     """
-    logger.info(f"[LangGraph Workflow] Starting execution for query: '{query}'")
+    logger.info(f"[LANGGRAPH] Starting workflow execution for query: '{query}'")
 
     initial_state: MarineAgentState = {
         "user_query": query,
@@ -126,6 +143,7 @@ def run_marine_workflow(
         "weather_results": None,
         "ocean_results": None,
         "geospatial_results": None,
+        "satellite_results": None,
         "risk_results": None,
         "evidence": [],
         "intermediate_results": [],
@@ -138,8 +156,9 @@ def run_marine_workflow(
 
     try:
         final_state = compiled_marine_workflow.invoke(initial_state)
+        logger.info(f"[LANGGRAPH] Workflow execution completed for query: '{query}'")
     except Exception as e:
-        logger.error(f"[LangGraph Workflow] Invocation error: {e}")
+        logger.error(f"[LANGGRAPH] Invocation error: {e}")
         # Fallback response if graph fails
         return {
             "answer": f"Marine Intelligence Service: Unable to complete multi-agent workflow ({str(e)}).",
@@ -152,6 +171,7 @@ def run_marine_workflow(
             "weather": None,
             "ocean": None,
             "geospatial": None,
+            "satellite": None,
             "risk": None,
             "map_data": None,
             "execution_steps": [{"agent": "workflow", "status": "failed", "details": str(e)}],
@@ -194,6 +214,7 @@ def run_marine_workflow(
         "weather": final_state.get("weather_results"),
         "ocean": final_state.get("ocean_results"),
         "geospatial": geospatial_res,
+        "satellite": final_state.get("satellite_results"),
         "risk": risk_res,
         "map_data": map_data,
         "execution_steps": final_state.get("execution_steps", []),

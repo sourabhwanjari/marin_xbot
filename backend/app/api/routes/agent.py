@@ -1,6 +1,9 @@
+import logging
 from fastapi import APIRouter, HTTPException
 from app.models.agent_models import AgentChatRequest, AgentChatResponse
 from app.graph.workflow import run_marine_workflow
+
+logger = logging.getLogger("marinex.api.agent")
 
 router = APIRouter(prefix="/agent", tags=["Multi-Agent Orchestration"])
 
@@ -9,18 +12,21 @@ async def agent_chat_interaction(request: AgentChatRequest):
     """
     LangGraph Multi-Agent Orchestration endpoint.
     Decomposes the query, selects specialized agents (Weather, Ocean, Geospatial,
-    Marine Knowledge/RAG, Risk Assessment), coordinates evidence, and synthesizes
+    Satellite, Marine Knowledge/RAG, Risk Assessment), coordinates evidence, and synthesizes
     an actionable marine decision support recommendation.
     """
     try:
         history = [h.model_dump() if hasattr(h, "model_dump") else h.dict() for h in request.history] if request.history else []
+        logger.info(f"[CHAT] query = {request.message} | location = {request.location} | history_len = {len(history)}")
         result = run_marine_workflow(
             query=request.message,
             location=request.location,
             chat_history=history
         )
+        logger.info(f"[CHAT] Completed agent response for query = '{request.message[:40]}' | status = {result.get('data_status')}")
         return AgentChatResponse(**result)
     except Exception as e:
+        logger.error(f"[CHAT] Agent chat failure: {e}")
         raise HTTPException(status_code=500, detail=f"Agent workflow failed: {str(e)}")
 
 @router.get("/status")
@@ -35,6 +41,7 @@ async def get_agent_status():
             {"name": "planner", "role": "Intent Classification & Task Decomposition"},
             {"name": "weather", "role": "Meteorological & Wind Squall Analysis"},
             {"name": "ocean", "role": "Oceanographic & Wave Spectral Analysis"},
+            {"name": "satellite", "role": "Remote Sensing Earth Observation Telemetry"},
             {"name": "geospatial", "role": "Coordinate & Maritime Geofencing Analysis"},
             {"name": "marine_knowledge", "role": "Chroma RAG Document Retrieval"},
             {"name": "risk", "role": "Multi-Factor Marine Risk Reasoning"},
