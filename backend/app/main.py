@@ -1,14 +1,25 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.routes import health, marine, chat, rag, agent, data_sources
+from app.data_ingestion.scheduler.jobs import ingestion_scheduler
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Launch scheduled marine public web ingestion tasks
+    ingestion_scheduler.start()
+    yield
+    # Shutdown: Stop scheduled ingestion tasks
+    ingestion_scheduler.stop()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description=f"{settings.SUBTITLE} — Built for {settings.ORCA_CONTEXT}",
-    version="1.4.0-phase4",
+    version="1.5.0-phase5b",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # Configure CORS
@@ -35,13 +46,16 @@ async def root():
         "project": settings.PROJECT_NAME,
         "subtitle": settings.SUBTITLE,
         "problem_statement": settings.ORCA_CONTEXT,
-        "phase": "Phase 4 - Real Marine Data Integration + Geo-spatial Intelligence Active",
+        "phase": "Phase 5B - Official Public Marine Web Ingestion Active",
         "docs": "/docs",
         "health": "/api/health",
         "agent_status": "/api/agent/status",
         "rag_status": "/api/rag/status",
-        "data_sources_status": "/api/data-sources/status"
+        "gateway_status": "/api/marine/gateway/status",
+        "ingestion_status": "/api/marine/ingestion/status",
+        "providers_status": "/api/marine/providers/status"
     }
+
 
 if __name__ == "__main__":
     import uvicorn

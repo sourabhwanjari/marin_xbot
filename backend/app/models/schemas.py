@@ -109,3 +109,8 @@ class ChatResponse(BaseModel):
     execution_steps: Optional[List[Dict[str, Any]]] = []
     location: Optional[str] = None
     time_context: Optional[str] = None
+    route: Optional[Dict[str, Any]] = None
+    detected_language: Optional[str] = None
+    response_language: Optional[str] = None
+    map_data: Optional[Dict[str, Any]] = None
+

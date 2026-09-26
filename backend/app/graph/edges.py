@@ -17,6 +17,15 @@ def route_from_planner(state: MarineAgentState) -> str:
     target = "response"
     if intent in [QueryIntent.OUT_OF_SCOPE.value, QueryIntent.GREETING.value, QueryIntent.EXPLAIN_CONCEPT.value]:
         target = "response"
+    elif intent == QueryIntent.SAFE_ROUTE.value or "route" in selected_agents:
+        if "weather" in selected_agents:
+            target = "weather"
+        elif "ocean" in selected_agents:
+            target = "ocean"
+        elif "geospatial" in selected_agents:
+            target = "geospatial"
+        else:
+            target = "route"
     elif intent == QueryIntent.FISHING_SAFETY.value or "risk" in selected_agents:
         target = "weather"
     elif intent == QueryIntent.WEATHER_INQUIRY.value:
@@ -39,6 +48,8 @@ def route_from_planner(state: MarineAgentState) -> str:
         target = "satellite"
     elif "geospatial" in selected_agents:
         target = "geospatial"
+    elif "route" in selected_agents:
+        target = "route"
     elif "marine_knowledge" in selected_agents:
         target = "marine_knowledge"
 
@@ -101,7 +112,23 @@ def route_after_satellite(state: MarineAgentState) -> str:
 
 def route_after_geospatial(state: MarineAgentState) -> str:
     """
-    After Geospatial Node: Check if Marine Knowledge, Risk, or Response is next.
+    After Geospatial Node: Check if Route, Marine Knowledge, Risk, or Response is next.
+    """
+    selected = state.get("selected_agents", [])
+    if "route" in selected:
+        target = "route"
+    elif "marine_knowledge" in selected:
+        target = "marine_knowledge"
+    elif "risk" in selected:
+        target = "risk"
+    else:
+        target = "response"
+    logger.info(f"[ROUTER] After geospatial routed to '{target}'")
+    return target
+
+def route_after_route(state: MarineAgentState) -> str:
+    """
+    After Route Node: Check if Risk, Marine Knowledge, or Response is next.
     """
     selected = state.get("selected_agents", [])
     if "marine_knowledge" in selected:
@@ -110,7 +137,7 @@ def route_after_geospatial(state: MarineAgentState) -> str:
         target = "risk"
     else:
         target = "response"
-    logger.info(f"[ROUTER] After geospatial routed to '{target}'")
+    logger.info(f"[ROUTER] After route routed to '{target}'")
     return target
 
 def route_after_knowledge(state: MarineAgentState) -> str:
@@ -124,3 +151,4 @@ def route_after_knowledge(state: MarineAgentState) -> str:
         target = "response"
     logger.info(f"[ROUTER] After knowledge routed to '{target}'")
     return target
+

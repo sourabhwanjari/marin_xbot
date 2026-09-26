@@ -1,4 +1,5 @@
-import { MarineConditions, FishingZone, MarineAlert, ChatMessage, RagStatus, SourceCitation, ExecutionStep, AgentChatRequest, AgentChatResponse, DataSourcesHealthResponse } from "@/types/marine";
+import { MarineConditions, FishingZone, MarineAlert, ChatMessage, RagStatus, SourceCitation, ExecutionStep, AgentChatRequest, AgentChatResponse, DataSourcesHealthResponse, MarineRoute } from "@/types/marine";
+
 import { marineConditions } from "@/data/marineData";
 import { mockFishingZones } from "@/data/fishingZones";
 import { mockAlerts } from "@/data/alerts";
@@ -152,6 +153,10 @@ export interface ChatApiResponse {
   execution_steps?: ExecutionStep[];
   location?: string;
   time_context?: string;
+  route?: MarineRoute;
+  detected_language?: string;
+  response_language?: string;
+  map_data?: Record<string, any>;
 }
 
 export async function sendAgentChatMessage(request: AgentChatRequest): Promise<AgentChatResponse> {
@@ -161,6 +166,16 @@ export async function sendAgentChatMessage(request: AgentChatRequest): Promise<A
     body: JSON.stringify(request),
   });
   if (!res.ok) throw new Error(`Agent chat failed with HTTP ${res.status}`);
+  return await res.json();
+}
+
+export async function recommendMarineRoute(request: any): Promise<MarineRoute> {
+  const res = await fetch(`${API_BASE_URL}/marine/route/recommend`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) throw new Error(`Route calculation failed with HTTP ${res.status}`);
   return await res.json();
 }
 
@@ -183,7 +198,7 @@ export async function sendChatMessage(
         message: data.answer,
         source: `langgraph-multi-agent (${data.data_status})`,
         is_demo: data.is_demo,
-        suggested_actions: [],
+        suggested_actions: data.route ? ["View Route on Map", "Check Swell along Track"] : [],
         related_zones: data.location ? [`${data.location} Sector`] : [],
         sources: data.sources || [],
         is_rag: (data.sources && data.sources.length > 0) || false,
@@ -193,6 +208,10 @@ export async function sendChatMessage(
         execution_steps: data.execution_steps || [],
         location: data.location,
         time_context: data.time_context,
+        route: data.route,
+        detected_language: data.detected_language,
+        response_language: data.response_language,
+        map_data: data.map_data,
       };
     }
 
@@ -205,6 +224,7 @@ export async function sendChatMessage(
     if (!chatRes.ok) throw new Error(`HTTP error ${chatRes.status}`);
     return await chatRes.json();
   } catch (err) {
+
     console.warn("Backend /agent/chat and /chat unreachable, synthesizing local mock response:", err);
 
     const msg = message.toLowerCase().trim();

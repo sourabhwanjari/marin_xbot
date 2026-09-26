@@ -8,7 +8,9 @@ from app.agents.geospatial_agent import geospatial_agent
 from app.agents.satellite_agent import satellite_agent
 from app.agents.marine_knowledge_agent import marine_knowledge_agent
 from app.agents.risk_agent import risk_agent
+from app.agents.route_agent import route_agent
 from app.agents.response_agent import response_agent
+from app.language.language_service import language_service
 
 logger = logging.getLogger("marinex.graph.nodes")
 
@@ -18,11 +20,19 @@ def add_step(state: MarineAgentState, agent: str, status: str, details: str = No
     state["execution_steps"] = steps
 
 def planner_node(state: MarineAgentState) -> MarineAgentState:
-    """Planner Node: Decomposes query and selects required specialized agents."""
+    """Planner Node: Decomposes query, detects language, and selects required specialized agents."""
     logger.info("[LangGraph] Executing planner_node")
     query = state.get("user_query", "")
     history = state.get("chat_history", [])
     default_loc = state.get("location", {}).get("name") if state.get("location") else None
+
+    # Detect user language with multi-turn persistence
+    lang_res = language_service.detect_language(query, history=history)
+    detected_lang = lang_res.language
+    state["detected_language"] = detected_lang
+    state["response_language"] = detected_lang
+    logger.info(f"[LANGUAGE] Detected language: {detected_lang} (confidence: {lang_res.confidence})")
+
 
     plan = planner_agent.plan(query, default_location=default_loc, chat_history=history)
 
@@ -30,15 +40,18 @@ def planner_node(state: MarineAgentState) -> MarineAgentState:
     state["tasks"] = plan.tasks
     state["selected_agents"] = plan.required_agents
     state["location"] = {"name": plan.location} if plan.location else {"name": "Chennai"}
+    state["origin"] = {"name": plan.origin} if plan.origin else (state.get("location") or {"name": "Chennai"})
+    state["destination"] = {"name": plan.destination} if plan.destination else {"name": "Pulicat"}
     state["time_context"] = {"name": plan.time} if plan.time else {"name": "current"}
 
     add_step(
         state,
         agent="planner",
         status="completed",
-        details=f"Intent: {plan.intent.value} | Agents: {', '.join(plan.required_agents) if plan.required_agents else 'None'}"
+        details=f"Lang: {detected_lang} | Intent: {plan.intent.value} | Agents: {', '.join(plan.required_agents) if plan.required_agents else 'None'}"
     )
     return state
+
 
 def weather_node(state: MarineAgentState) -> MarineAgentState:
     """Weather Node: Queries and analyzes meteorological conditions."""
@@ -164,8 +177,43 @@ def risk_node(state: MarineAgentState) -> MarineAgentState:
 
     return state
 
+def route_node(state: MarineAgentState) -> MarineAgentState:
+    """Route Node: Calculates deterministic safe marine route and safety scoring."""
+    logger.info("[LangGraph] Executing route_node")
+    orig_dict = state.get("origin") or state.get("location") or {"name": "Chennai"}
+    dest_dict = state.get("destination") or {"name": "Pulicat"}
+    orig_name = orig_dict.get("name") or "Chennai"
+    dest_name = dest_dict.get("name") or "Pulicat"
+    time_ctx = state.get("time_context", {}).get("name", "current")
+
+    try:
+        res = route_agent.run(
+            origin=orig_name,
+            destination=dest_name,
+            departure_time=time_ctx,
+            vessel_type="fishing_boat",
+            vessel_speed_knots=10.0,
+            route_preference="balanced"
+        )
+        state["route_results"] = res
+        state["route_requested"] = True
+        add_step(
+            state,
+            agent="route",
+            status="completed",
+            details=f"Track: {orig_name} -> {dest_name} | {res.get('distance_km')}km | Score: {res.get('safety_score')}/100 ({res.get('risk_level')})"
+        )
+    except Exception as e:
+        logger.error(f"[LangGraph] Route node error: {e}")
+        errors = state.get("errors", [])
+        errors.append(f"Route agent error: {str(e)}")
+        state["errors"] = errors
+        add_step(state, agent="route", status="failed", details=str(e))
+
+    return state
+
 def response_node(state: MarineAgentState) -> MarineAgentState:
-    """Response Synthesizer Node: Produces final structured answer and evidence."""
+    """Response Synthesizer Node: Produces final structured answer and evidence in detected language."""
     logger.info("[LANGGRAPH] Executing response_node")
     query = state.get("user_query", "")
     intent = state.get("intent")
@@ -175,10 +223,12 @@ def response_node(state: MarineAgentState) -> MarineAgentState:
     ocean = state.get("ocean_results")
     geospatial = state.get("geospatial_results")
     satellite = state.get("satellite_results")
+    route = state.get("route_results")
     rag = state.get("rag_results", [{}])[0] if state.get("rag_results") else None
     risk = state.get("risk_results")
     errors = state.get("errors")
     history = state.get("chat_history", [])
+    detected_lang = state.get("detected_language", "en")
 
     res = response_agent.synthesize(
         query=query,
@@ -189,16 +239,21 @@ def response_node(state: MarineAgentState) -> MarineAgentState:
         ocean=ocean,
         geospatial=geospatial,
         satellite=satellite,
+        route=route,
         rag=rag,
         risk=risk,
         errors=errors,
-        chat_history=history
+        chat_history=history,
+        language=detected_lang
     )
 
     state["final_answer"] = res.get("answer")
     state["evidence"] = res.get("evidence", [])
     state["data_status"] = res.get("data_status", "demo")
     state["map_data"] = res.get("map_data")
-    add_step(state, agent="response", status="completed", details="Final response synthesized")
+    if route:
+        state["route_results"] = res.get("route", route)
+    add_step(state, agent="response", status="completed", details=f"Final response synthesized in [{detected_lang}]")
 
     return state
+

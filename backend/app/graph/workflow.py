@@ -11,6 +11,7 @@ from app.graph.nodes import (
     geospatial_node,
     marine_knowledge_node,
     risk_node,
+    route_node,
     response_node,
 )
 from app.graph.edges import (
@@ -19,6 +20,7 @@ from app.graph.edges import (
     route_after_ocean,
     route_after_satellite,
     route_after_geospatial,
+    route_after_route,
     route_after_knowledge,
 )
 
@@ -38,6 +40,7 @@ def build_marine_graph() -> StateGraph:
     workflow.add_node("geospatial", geospatial_node)
     workflow.add_node("marine_knowledge", marine_knowledge_node)
     workflow.add_node("risk", risk_node)
+    workflow.add_node("route", route_node)
     workflow.add_node("response", response_node)
 
     # 2. Add edges & conditional transitions
@@ -52,6 +55,7 @@ def build_marine_graph() -> StateGraph:
             "satellite": "satellite",
             "geospatial": "geospatial",
             "marine_knowledge": "marine_knowledge",
+            "route": "route",
             "response": "response",
         }
     )
@@ -96,6 +100,17 @@ def build_marine_graph() -> StateGraph:
         "geospatial",
         route_after_geospatial,
         {
+            "route": "route",
+            "marine_knowledge": "marine_knowledge",
+            "risk": "risk",
+            "response": "response",
+        }
+    )
+
+    workflow.add_conditional_edges(
+        "route",
+        route_after_route,
+        {
             "marine_knowledge": "marine_knowledge",
             "risk": "risk",
             "response": "response",
@@ -115,6 +130,7 @@ def build_marine_graph() -> StateGraph:
     workflow.add_edge("response", END)
 
     return workflow
+
 
 # Compile graph once
 marine_graph = build_marine_graph()
@@ -187,6 +203,7 @@ def run_marine_workflow(
 
     risk_res = final_state.get("risk_results")
     risk_lvl = risk_res.get("risk_level") if risk_res else None
+    route_res = final_state.get("route_results")
 
     # Map data for GIS visualization
     map_data = final_state.get("map_data")
@@ -203,6 +220,17 @@ def run_marine_workflow(
                 "protected_zone": geospatial_res.get("protected_zone", False)
             }
 
+    if route_res and isinstance(map_data, dict):
+        map_data["route"] = route_res
+    elif route_res and not map_data:
+        map_data = {
+            "route": route_res,
+            "center": {
+                "lat": route_res.get("origin", {}).get("latitude", 13.125),
+                "lng": route_res.get("origin", {}).get("longitude", 80.298)
+            }
+        }
+
     return {
         "answer": final_state.get("final_answer") or "Marine assessment completed.",
         "intent": final_state.get("intent") or "general_marine",
@@ -216,8 +244,12 @@ def run_marine_workflow(
         "geospatial": geospatial_res,
         "satellite": final_state.get("satellite_results"),
         "risk": risk_res,
+        "route": route_res,
+        "detected_language": final_state.get("detected_language", "en"),
+        "response_language": final_state.get("response_language", "en"),
         "map_data": map_data,
         "execution_steps": final_state.get("execution_steps", []),
         "data_status": final_state.get("data_status", "demo"),
         "is_demo": True
     }
+

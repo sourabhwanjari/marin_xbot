@@ -23,8 +23,12 @@ from app.marine_gateway.models import (
 from app.services.mock_marine_service import mock_marine_service
 from app.data_sources.geospatial.service import geospatial_service
 from app.data_sources.pfz.service import pfz_service
+from app.data_ingestion.storage.repository import ingestion_repository
+from app.data_ingestion.normalization.marine_normalizer import MarineNormalizer
+from app.data_ingestion.common.scraper_status import calculate_freshness, FreshnessStatus
 
 logger = logging.getLogger("marinex.gateway")
+
 
 class MarineDataGateway:
     """
@@ -92,8 +96,23 @@ class MarineDataGateway:
 
         logger.info(f"[GATEWAY] method = get_weather | location = {loc.name} ({loc.latitude:.3f}, {loc.longitude:.3f}) [{ctx}]")
 
+        # Check official ingested public web data first
+        if not provider_name:
+            try:
+                db_weather = ingestion_repository.get_latest_weather(lat=loc.latitude, lon=loc.longitude)
+                if db_weather:
+                    freshness, _ = calculate_freshness(db_weather.observed_at, db_weather.valid_until, category="weather")
+                    if freshness in (FreshnessStatus.FRESH, FreshnessStatus.RECENT):
+                        logger.info(f"[GATEWAY] Found fresh ingested IMD weather record for '{loc.name}' ({freshness.value})")
+                        norm_resp = MarineNormalizer.normalize_weather_record(db_weather.to_dict(), location=loc)
+                        self.cache.set(cache_key, norm_resp, category="weather")
+                        return norm_resp
+            except Exception as e:
+                logger.warning(f"[GATEWAY] Ingestion database lookup failed: {e}")
+
         # Select provider from registry
         provider = self.registry.get_provider_by_name(provider_name) if provider_name else self.registry.get_provider(ProviderCapability.WEATHER, prefer_configured=prefer_configured)
+
         logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = weather | status = {provider.get_health().connection_status}")
 
         t0 = time.time()
@@ -167,7 +186,22 @@ class MarineDataGateway:
 
         logger.info(f"[GATEWAY] method = get_ocean_conditions | location = {loc.name} ({loc.latitude:.3f}, {loc.longitude:.3f}) [{ctx}]")
 
+        # Check official ingested public web data first
+        if not provider_name:
+            try:
+                db_ocean = ingestion_repository.get_latest_ocean(lat=loc.latitude, lon=loc.longitude)
+                if db_ocean:
+                    freshness, _ = calculate_freshness(db_ocean.observed_at, db_ocean.valid_until, category="ocean")
+                    if freshness in (FreshnessStatus.FRESH, FreshnessStatus.RECENT):
+                        logger.info(f"[GATEWAY] Found fresh ingested INCOIS ocean record for '{loc.name}' ({freshness.value})")
+                        norm_resp = MarineNormalizer.normalize_ocean_record(db_ocean.to_dict(), location=loc)
+                        self.cache.set(cache_key, norm_resp, category="ocean")
+                        return norm_resp
+            except Exception as e:
+                logger.warning(f"[GATEWAY] Ingestion database lookup failed: {e}")
+
         provider = self.registry.get_provider_by_name(provider_name) if provider_name else self.registry.get_provider(ProviderCapability.OCEAN, prefer_configured=prefer_configured)
+
         logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = ocean | status = {provider.get_health().connection_status}")
 
         t0 = time.time()
@@ -231,6 +265,17 @@ class MarineDataGateway:
 
         logger.info(f"[GATEWAY] method = get_pfz | location = {loc.name} ({loc.latitude:.3f}, {loc.longitude:.3f})")
 
+        # Check official ingested PFZ advisories from INCOIS first
+        try:
+            db_pfz = ingestion_repository.get_active_pfz(lat=loc.latitude, lon=loc.longitude)
+            if db_pfz:
+                records_dicts = [z.to_dict() for z in db_pfz]
+                logger.info(f"[GATEWAY] Found {len(db_pfz)} active ingested INCOIS PFZ records for '{loc.name}'")
+                norm_resp = MarineNormalizer.normalize_pfz_records(records_dicts, location=loc)
+                return norm_resp
+        except Exception as e:
+            logger.warning(f"[GATEWAY] Ingestion database lookup failed for PFZ: {e}")
+
         provider = self.registry.get_provider(ProviderCapability.PFZ)
         logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = pfz | status = {provider.get_health().connection_status}")
         resp = provider.get_pfz(location=loc, time_window=tw)
@@ -250,6 +295,16 @@ class MarineDataGateway:
         Strictly returns NOT_CONFIGURED when MOSDAC credentials are not present.
         """
         logger.info(f"[GATEWAY] method = get_satellite_data | location = {location.name if location else 'Regional Sector'} | product = {product_name}")
+
+        # Check official ingested satellite granules first
+        try:
+            db_sat = ingestion_repository.get_latest_satellite(product=product_name, lat=location.latitude if location else None, lon=location.longitude if location else None)
+            if db_sat:
+                logger.info(f"[GATEWAY] Found ingested satellite granule for '{product_name}'")
+                return MarineNormalizer.normalize_satellite_record(db_sat.to_dict(), location=location)
+        except Exception as e:
+            logger.warning(f"[GATEWAY] Ingestion database lookup failed for satellite: {e}")
+
         provider = self.registry.get_provider(ProviderCapability.SATELLITE)
         logger.info(f"[PROVIDER] provider = {provider.provider_name} | capability = satellite | status = {provider.get_health().connection_status}")
         resp = provider.get_satellite_data(location=location, product=product_name, time_window=time_window)
@@ -302,22 +357,42 @@ class MarineDataGateway:
         return self.get_marine_alerts(location_name=loc_name)
 
     def get_marine_alerts(self, location_name: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Backward-compatible helper for alerts."""
-        alerts = mock_marine_service.get_alerts()
-        return [
-            {
-                "id": a.id,
-                "type": a.type,
-                "severity": a.severity.value,
-                "location": a.location,
-                "time": a.time,
-                "short_description": a.short_description,
-                "advisory": a.advisory,
-                "provider": "IMD / Coast Guard Marine Safety Alert",
-                "data_status": "demo"
-            }
-            for a in alerts
-        ]
+        """Returns active marine alerts combining official ingested advisories and safety bulletins."""
+        alerts = []
+        try:
+            advisories = ingestion_repository.get_active_advisories()
+            for adv in advisories:
+                alerts.append({
+                    "id": adv.id,
+                    "type": adv.alert_type,
+                    "severity": adv.severity.lower() if adv.severity else "medium",
+                    "location": adv.location_name,
+                    "time": adv.issued_at or adv.retrieved_at,
+                    "short_description": adv.headline,
+                    "advisory": adv.advisory_text,
+                    "provider": f"{adv.agency} Marine Safety Alert",
+                    "data_status": "external"
+                })
+        except Exception as e:
+            logger.warning(f"[GATEWAY] Failed to retrieve ingested advisories: {e}")
+
+        if not alerts:
+            legacy_alerts = mock_marine_service.get_alerts()
+            alerts = [
+                {
+                    "id": a.id,
+                    "type": a.type,
+                    "severity": a.severity.value,
+                    "location": a.location,
+                    "time": a.time,
+                    "short_description": a.short_description,
+                    "advisory": a.advisory,
+                    "provider": "IMD / Coast Guard Marine Safety Alert",
+                    "data_status": "demo"
+                }
+                for a in legacy_alerts
+            ]
+        return alerts
 
     def get_gateway_status(self) -> GatewayStatusResponse:
         """
@@ -327,19 +402,22 @@ class MarineDataGateway:
         providers_health = self.registry.get_status_report()
         routing = self.registry.get_routing_table()
         cache_entries = len(getattr(self.cache, "_cache", {}))
+        db_stat = ingestion_repository.get_database_status()
 
         return GatewayStatusResponse(
             status="healthy",
-            gateway_version="Phase-5A",
+            gateway_version="Phase-5B",
             total_providers_registered=len(providers_health),
             providers=providers_health,
             capability_routing=routing,
             active_cache_entries=cache_entries,
             metadata={
                 "capabilities": routing,
-                "providers": [p.model_dump() for p in providers_health]
+                "providers": [p.model_dump() for p in providers_health],
+                "ingestion_database": db_stat
             }
         )
+
 
     def get_providers_status(self) -> Dict[str, Dict[str, str]]:
         """

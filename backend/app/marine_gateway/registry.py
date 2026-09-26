@@ -131,6 +131,15 @@ class ProviderRegistry:
             for cap in ProviderCapability
         }
 
+    def get_all_provider_statuses(self) -> Dict[str, Any]:
+        """Backward-compatible alias for provider status reports."""
+        return {
+            "capabilities": self.get_routing_table(),
+            "providers": [p.get_health().model_dump() for p in self._providers.values()]
+        }
+
+
+
     def get_providers_status_dict(self) -> Dict[str, Dict[str, str]]:
         """
         Returns Phase 5B standard status map for GET /api/marine/providers/status:

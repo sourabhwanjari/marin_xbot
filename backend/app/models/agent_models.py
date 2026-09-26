@@ -10,6 +10,7 @@ class QueryIntent(str, Enum):
     WEATHER_INQUIRY = "weather_inquiry"
     OCEAN_CONDITIONS = "ocean_conditions"
     PFZ_DISCOVERY = "pfz_discovery"
+    SAFE_ROUTE = "safe_route"
     RESTRICTED_ZONES = "restricted_zones"
     MARINE_KNOWLEDGE = "marine_knowledge"
     GENERAL_MARINE = "general_marine"
@@ -19,6 +20,8 @@ class QueryIntent(str, Enum):
 class PlannerOutput(BaseModel):
     intent: QueryIntent
     location: Optional[str] = None
+    origin: Optional[str] = None
+    destination: Optional[str] = None
     time: Optional[str] = None
     required_agents: List[str] = Field(default_factory=list)
     tasks: List[str] = Field(default_factory=list)
@@ -57,6 +60,27 @@ class RiskResult(BaseModel):
     recommendation_basis: List[str] = Field(default_factory=list)
     confidence: float = 0.85
 
+class RouteResult(BaseModel):
+    route_id: str
+    origin: Dict[str, Any]
+    destination: Dict[str, Any]
+    distance_km: float
+    estimated_duration_hours: float
+    estimated_duration_text: str
+    safety_score: int
+    risk_level: str
+    waypoints: List[List[float]]
+    route_geometry: Optional[Dict[str, Any]] = None
+    route_conditions: Optional[Dict[str, Any]] = None
+    warnings: List[str] = Field(default_factory=list)
+    hazards_avoided: List[str] = Field(default_factory=list)
+    avoided_zones: List[str] = Field(default_factory=list)
+    explanation: Optional[str] = None
+    status: str = "SUCCESS"
+    alternative_routes: List[Dict[str, Any]] = Field(default_factory=list)
+    source: str = "MARINEX Route Intelligence Engine"
+    data_status: str = "verified"
+
 class ExecutionStep(BaseModel):
     agent: str
     status: str  # "completed", "skipped", "failed"
@@ -65,6 +89,7 @@ class ExecutionStep(BaseModel):
 class AgentChatRequest(BaseModel):
     message: str
     location: Optional[str] = None
+    language: Optional[str] = None
     history: Optional[List[ChatHistoryItem]] = Field(default_factory=list)
 
 class AgentChatResponse(BaseModel):
@@ -80,7 +105,11 @@ class AgentChatResponse(BaseModel):
     geospatial: Optional[Dict[str, Any]] = None
     satellite: Optional[Dict[str, Any]] = None
     risk: Optional[Dict[str, Any]] = None
+    route: Optional[Dict[str, Any]] = None
+    detected_language: Optional[str] = None
+    response_language: Optional[str] = None
     map_data: Optional[Dict[str, Any]] = None
     execution_steps: List[ExecutionStep] = Field(default_factory=list)
     data_status: str = "demo"
     is_demo: bool = True
+

@@ -205,3 +205,83 @@ cd backend
 python -m pytest tests/test_gateway_connection_e2e.py -v
 ```
 **Result: 14 passed in ~58s (100% success)**
+
+---
+
+## 8. Official Public Web Data Ingestion Layer
+
+Phase 5B adds a scheduled, asynchronous, compliant ingestion pipeline collecting marine telemetry exclusively from official public government portals:
+
+```
+Official Public Web Source
+      │
+      ▼
+Scheduled Scraper / Collector (BaseMarineScraper)
+      │
+      ▼
+Parser (HTMLTableParser, JSONFeedParser, GeoSpatialParser)
+      │
+      ▼
+Validation & Normalization (MarineNormalizer -> MarineDataResponse)
+      │
+      ▼
+Persistence Layer (PostgreSQL / PostGIS with SQLite Local Fallback)
+      │
+      ▼
+Marine Data Gateway (marine_gateway)
+      │
+      ▼
+LangGraph Multi-Agent Orchestrator
+      │
+      ▼
+Response Synthesizer & Chatbot UI / Marine Map
+```
+
+### 8.1 Official Public Web Sources & Permitted Endpoints
+
+1. **India Meteorological Department (IMD)**
+   - **Source**: `https://mausam.imd.gov.in`
+   - **Bulletin Endpoints**:
+     - Coastal Bulletins: `https://mausam.imd.gov.in/responsive/coastal_bulletin.php`
+     - Marine Warnings & Cyclones: `https://mausam.imd.gov.in/responsive/cycloneinformation.php`
+     - Coastal AWS Stations: `https://mausam.imd.gov.in/responsive/districtWiseWarning.php`
+   - **Parameters Ingested**: Coastal station surface wind speed (knots), wind direction, ambient air temperature (°C), precipitation (mm), visibility (km), squall advisories, and cyclone warnings.
+
+2. **INCOIS (Indian National Centre for Ocean Information Services)**
+   - **Source**: `https://incois.gov.in`
+   - **Forecast Endpoints**:
+     - Ocean State Forecasts (OSF): `https://incois.gov.in/portal/osf/osf.jsp`
+     - High Wave Alerts & Swell Surges: `https://incois.gov.in/portal/osf/highwavealert.jsp`
+   - **Parameters Ingested**: Significant wave height (Hs, m), swell period (s), swell direction, Sea Surface Temperature (SST, °C), surface current speed (knots), sea state category, and high-wave warning zones.
+
+3. **INCOIS PFZ Mission (Potential Fishing Zones)**
+   - **Source**: `https://incois.gov.in`
+   - **PFZ Advisory Feed**: `https://incois.gov.in/portal/pfz/pfz.jsp`
+   - **Parameters Ingested**: Delineated fishing ground coordinates, distance from fish landing centers (km), compass bearing/direction, SST thermal gradient (°C), chlorophyll-a concentration (High/Moderate), depth contours (m), and target pelagic species.
+
+4. **ISRO MOSDAC (Oceansat-3 / INSAT-3D Archival Centre)**
+   - **Source**: `https://www.mosdac.gov.in`
+   - **Access Rules**: Strict compliance with ISRO access policies. Automated ingestion returns `NOT_CONFIGURED` without valid registered user credentials (`MOSDAC_USERNAME`, `MOSDAC_PASSWORD`). The scraper never bypasses authentication, CAPTCHA, or authorization controls.
+
+### 8.2 Ingestion Database Schema (SQLAlchemy Models)
+
+- `data_source_runs`: Complete execution audit trail (scraper name, status, records ingested, duration ms, timestamps, error message).
+- `weather_data`: Time-indexed meteorological observations and coastal warnings.
+- `ocean_data`: Hydrodynamic wave heights, swell vectors, SST, and sea states.
+- `pfz_data`: Geographic coordinates, spatial polygons, oceanographic thermal fronts, and pelagic species.
+- `satellite_data`: Ocean observation granules, satellite mission metadata, resolution, cloud cover, and download links.
+- `marine_advisories`: Coastal hazard warnings, high wave alerts, and navigational bulletins.
+
+### 8.3 Ingestion API Endpoints
+
+- `GET /api/marine/ingestion/status`: Complete live status across all collectors, last run timestamps, record counts, intervals, and database health.
+- `POST /api/marine/ingestion/run/{source}`: On-demand collection trigger for `imd`, `incois_ocean`, `incois_pfz`, `mosdac`, or `all`.
+- `GET /api/marine/advisories`: Active official marine bulletins and high-wave alerts.
+
+### 8.4 Ingestion Test Suite
+```powershell
+cd backend
+python -m pytest tests/test_phase5b_web_ingestion.py -v
+```
+**Result: 17 passed in ~4.8s (100% success)**
+

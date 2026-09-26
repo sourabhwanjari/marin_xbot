@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import React from "react";
-import { FishingZone, MarineAlert, UserLocation, HazardArea, RestrictedArea } from "@/types/marine";
+import { FishingZone, MarineAlert, UserLocation, HazardArea, RestrictedArea, MarineRoute } from "@/types/marine";
 
 const DynamicMarineMap = dynamic(() => import("./MarineMap"), {
   ssr: false,
@@ -22,7 +22,9 @@ interface MapWrapperProps {
   restrictedAreas: RestrictedArea[];
   selectedZoneId?: string | null;
   onZoneSelect?: (zone: FishingZone) => void;
+  route?: MarineRoute | null;
 }
+
 
 export const MapWrapper: React.FC<MapWrapperProps> = (props) => {
   return <DynamicMarineMap {...props} />;

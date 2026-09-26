@@ -6,6 +6,7 @@ import MapWrapper from "@/components/map/MapWrapper";
 import {
   FishingZone,
   MarineAlert,
+  MarineRoute,
 } from "@/types/marine";
 import { mockFishingZones as fallbackZones } from "@/data/fishingZones";
 import { mockAlerts as fallbackAlerts } from "@/data/alerts";
@@ -15,15 +16,26 @@ import {
   mockRestrictedAreas,
 } from "@/data/locations";
 import { fetchFishingZones, fetchMarineAlerts } from "@/services/api";
-import { MapPin, ShieldAlert, Waves, CheckCircle2 } from "lucide-react";
+import { MapPin, ShieldAlert, Waves, CheckCircle2, Route as RouteIcon, X } from "lucide-react";
 
 export default function MarineMapPage() {
   const [fishingZones, setFishingZones] = useState<FishingZone[]>(fallbackZones);
   const [alerts, setAlerts] = useState<MarineAlert[]>(fallbackAlerts);
   const [selectedZone, setSelectedZone] = useState<FishingZone | null>(null);
+  const [activeRoute, setActiveRoute] = useState<MarineRoute | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check if a recommended route was transferred from chat
+    try {
+      const stored = sessionStorage.getItem("marinex_active_route");
+      if (stored) {
+        setActiveRoute(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.warn("Could not parse stored route:", e);
+    }
+
     async function loadMapData() {
       setIsLoading(true);
       try {
@@ -42,6 +54,7 @@ export default function MarineMapPage() {
 
     loadMapData();
   }, []);
+
 
   return (
     <div className="min-h-screen flex flex-col bg-[#070d19] text-slate-100">
@@ -78,6 +91,50 @@ export default function MarineMapPage() {
           </div>
         </div>
 
+        {/* Active Route Inspection Banner */}
+        {activeRoute && (
+          <div className="bg-cyan-950/70 border border-cyan-500/70 rounded-xl p-3.5 text-xs text-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-cyan-950/40 animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-cyan-600/30 border border-cyan-500/50 flex items-center justify-center text-cyan-300 flex-shrink-0">
+                <RouteIcon className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-white text-sm">
+                    {activeRoute.origin.name || "Origin"} ➔ {activeRoute.destination.name || "Destination"}
+                  </span>
+                  <span className="text-cyan-300 font-mono text-[11px] px-2 py-0.5 rounded bg-slate-900/80 border border-cyan-800/60">
+                    {activeRoute.distance_km} km • {activeRoute.estimated_duration_text}
+                  </span>
+                  <span
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                      activeRoute.safety_score >= 80
+                        ? "bg-emerald-950/90 text-emerald-300 border-emerald-600"
+                        : "bg-amber-950/90 text-amber-300 border-amber-600"
+                    }`}
+                  >
+                    Safety Score: {activeRoute.safety_score}/100 ({activeRoute.risk_level})
+                  </span>
+                </div>
+                <p className="text-slate-300 text-[11px] mt-1">
+                  Corridor clears restricted fairways & nearshore hazard zones. Plotted on map below.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveRoute(null);
+                sessionStorage.removeItem("marinex_active_route");
+              }}
+              className="text-[11px] text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700/80 hover:border-slate-600 transition self-end sm:self-auto cursor-pointer flex items-center gap-1 shadow-xs"
+            >
+              <X className="w-3.5 h-3.5 text-slate-400" />
+              <span>Dismiss Route</span>
+            </button>
+          </div>
+        )}
+
         {/* Selected Zone Quick Details (if user clicked a zone) */}
         {selectedZone && (
           <div className="bg-cyan-950/60 border border-cyan-700/60 rounded-xl p-3.5 text-xs text-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200 shadow-md">
@@ -113,9 +170,11 @@ export default function MarineMapPage() {
             restrictedAreas={mockRestrictedAreas}
             selectedZoneId={selectedZone?.id}
             onZoneSelect={(zone) => setSelectedZone(zone)}
+            route={activeRoute}
           />
         </section>
       </main>
     </div>
   );
 }
+

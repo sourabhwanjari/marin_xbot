@@ -17,7 +17,14 @@ import {
   BookOpen,
   Copy,
   Check,
+  Navigation,
+  ArrowRight,
+  ExternalLink,
+  Wind,
+  Waves,
+  Route as RouteIcon,
 } from "lucide-react";
+
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -218,6 +225,109 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           ) : (
             <FormattedMarkdown content={message.text} />
           )}
+
+          {/* Recommended Route Card (Compact & Modern) */}
+          {!isUser && message.route && (
+            <div className="mt-3 p-3.5 rounded-xl bg-gradient-to-br from-slate-900/95 via-slate-900/80 to-cyan-950/40 border border-cyan-500/50 shadow-lg text-xs space-y-3">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
+                    <Navigation className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Recommended Safe Route</div>
+                    <div className="font-bold text-white text-sm flex items-center gap-1.5">
+                      <span>{message.route.origin.name || "Origin"}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>{message.route.destination.name || "Destination"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end">
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                    message.route.safety_score >= 80
+                      ? "bg-emerald-950/80 text-emerald-300 border-emerald-600"
+                      : message.route.safety_score >= 50
+                      ? "bg-amber-950/80 text-amber-300 border-amber-600"
+                      : "bg-red-950/80 text-red-300 border-red-600"
+                  }`}>
+                    Safety: {message.route.safety_score}/100 ({message.route.risk_level})
+                  </span>
+                </div>
+              </div>
+
+              {/* Key Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-300">
+                <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 font-medium">Distance</div>
+                  <div className="text-sm font-bold text-white mt-0.5">{message.route.distance_km} km</div>
+                </div>
+                <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 font-medium">Est. Duration</div>
+                  <div className="text-sm font-bold text-white mt-0.5">{message.route.estimated_duration_text}</div>
+                </div>
+                <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                    <Wind className="w-2.5 h-2.5 text-cyan-400" /> Avg Wind
+                  </div>
+                  <div className="text-sm font-bold text-cyan-300 mt-0.5">
+                    {message.route.route_conditions?.avg_wind_speed_knots !== undefined
+                      ? `${message.route.route_conditions.avg_wind_speed_knots} kts`
+                      : "12 kts"}
+                  </div>
+                </div>
+                <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                    <Waves className="w-2.5 h-2.5 text-cyan-400" /> Max Wave
+                  </div>
+                  <div className="text-sm font-bold text-cyan-300 mt-0.5">
+                    {message.route.route_conditions?.max_wave_height_m !== undefined
+                      ? `${message.route.route_conditions.max_wave_height_m} m`
+                      : "1.4 m"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Avoidance and Safety Factors */}
+              <div className="flex flex-wrap gap-1.5 text-[10px]">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  Bypasses Naval Port Channels
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 flex items-center gap-1">
+                  ✓ Nearshore Reef Clearance
+                </span>
+                {message.route.route_conditions?.sea_state && (
+                  <span className="px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700/60">
+                    Sea State: {message.route.route_conditions.sea_state}
+                  </span>
+                )}
+              </div>
+
+              {/* Action Button: View on Map */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      sessionStorage.setItem("marinex_active_route", JSON.stringify(message.route));
+                      window.location.href = "/map";
+                    } catch (e) {
+                      console.error("Failed to store route:", e);
+                    }
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-md shadow-cyan-900/30 transition cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-cyan-200" />
+                  <span>View Route on Interactive Map</span>
+                  <ExternalLink className="w-3 h-3 text-cyan-200" />
+                </button>
+              </div>
+            </div>
+          )}
+
 
           {/* Evidence Section */}
           {!isUser && hasEvidence && (

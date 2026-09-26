@@ -64,6 +64,10 @@ export default function HomePage() {
         executionSteps: response.execution_steps,
         location: response.location,
         timeContext: response.time_context,
+        route: response.route,
+        detected_language: response.detected_language,
+        response_language: response.response_language,
+        map_data: response.map_data,
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
@@ -113,11 +117,56 @@ export default function HomePage() {
                   Marine Intelligence Assistant
                 </p>
                 <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed pt-1">
-                  Ask about ocean conditions, weather, PFZ, marine hazards, satellite intelligence and coastal information.
+                  Safe route recommendations, automatic language detection (English, हिन्दी, मराठी), ocean conditions, PFZ, and coastal navigation.
                 </p>
+              </div>
+
+              {/* Quick Prompt Starters */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full pt-3 max-w-lg text-left">
+                <button
+                  type="button"
+                  onClick={() => handleSendMessage("Recommend a safe route from Chennai to Pulicat")}
+                  className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/60 hover:bg-slate-800/80 transition text-xs group cursor-pointer"
+                >
+                  <div className="font-semibold text-slate-200 group-hover:text-cyan-300 flex items-center gap-1.5">
+                    <span>🧭 Recommend Safe Route</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">Chennai to Pulicat corridor</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSendMessage("चेन्नई से पुलिकट सुरक्षित मार्ग बताओ")}
+                  className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/60 hover:bg-slate-800/80 transition text-xs group cursor-pointer"
+                >
+                  <div className="font-semibold text-slate-200 group-hover:text-cyan-300 flex items-center gap-1.5">
+                    <span>🇮🇳 हिन्दी में सुरक्षित मार्ग</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">चेन्नई से पुलिकट मार्ग गणना</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSendMessage("मुंबई ते गोवा सुरक्षित मार्ग दाखवा")}
+                  className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/60 hover:bg-slate-800/80 transition text-xs group cursor-pointer"
+                >
+                  <div className="font-semibold text-slate-200 group-hover:text-cyan-300 flex items-center gap-1.5">
+                    <span>🚩 मराठीत सुरक्षित मार्ग</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">मुंबई ते गोवा सागरी मार्ग</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSendMessage("Is it safe to go fishing tomorrow near Mumbai?")}
+                  className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/60 hover:bg-slate-800/80 transition text-xs group cursor-pointer"
+                >
+                  <div className="font-semibold text-slate-200 group-hover:text-cyan-300 flex items-center gap-1.5">
+                    <span>🐟 Fishing Safety Check</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">Mumbai swell & wind forecast</div>
+                </button>
               </div>
             </div>
           </div>
+
         ) : (
           /* ==================== ACTIVE CONVERSATION STATE ==================== */
           <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 space-y-3 max-w-3xl w-full mx-auto">

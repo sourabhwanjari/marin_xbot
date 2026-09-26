@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from app.models.agent_models import PlannerOutput, QueryIntent
 
 logger = logging.getLogger("marinex.agents.planner")
@@ -10,6 +10,24 @@ COASTAL_LOCATIONS = [
     "visakhapatnam", "vizag", "kasimedu", "goa", "kanyakumari",
     "mangalore", "paradip", "kolkata", "gujarat"
 ]
+
+INDIC_PORT_MAP = {
+    "चेन्नई": "Chennai",
+    "पुलिकट": "Pulicat",
+    "पुलिकत": "Pulicat",
+    "मुंबई": "Mumbai",
+    "गोवा": "Goa",
+    "कोच्चि": "Kochi",
+    "कोची": "Kochi",
+    "विशाखापट्टनम": "Visakhapatnam",
+    "वाइजाग": "Visakhapatnam",
+    "मंगलोर": "Mangalore",
+    "कन्याकुमारी": "Kanyakumari",
+    "पारादीप": "Paradip",
+    "कोलकाता": "Kolkata",
+    "गुजरात": "Gujarat",
+}
+
 
 TEMPORAL_PATTERNS = [
     ("tomorrow morning", "tomorrow morning"),
@@ -35,6 +53,68 @@ class PlannerAgent:
     the specialized agents required for execution.
     Does NOT answer the user's question.
     """
+
+    def _extract_route_endpoints(self, query: str, default_origin: str = "Chennai") -> Tuple[str, str]:
+        q = query.strip()
+        q_lower = q.lower()
+
+        # Check Indic patterns first
+        # Hindi: <orig> से <dest>
+        m_hi = re.search(r'([\u0900-\u097Fa-zA-Z]+)\s+से\s+([\u0900-\u097Fa-zA-Z]+)', q)
+        if m_hi:
+            orig = m_hi.group(1).strip()
+            dest = m_hi.group(2).strip()
+            orig = INDIC_PORT_MAP.get(orig, orig).title()
+            dest = INDIC_PORT_MAP.get(dest, dest).title()
+            return orig, dest
+
+        # Marathi: <orig> ते <dest> OR <orig>हून <dest>
+        m_mr1 = re.search(r'([\u0900-\u097Fa-zA-Z]+)\s+ते\s+([\u0900-\u097Fa-zA-Z]+)', q)
+        if m_mr1:
+            orig = m_mr1.group(1).strip()
+            dest = m_mr1.group(2).strip()
+            orig = INDIC_PORT_MAP.get(orig, orig).title()
+            dest = INDIC_PORT_MAP.get(dest, dest).title()
+            return orig, dest
+
+        m_mr2 = re.search(r'([\u0900-\u097Fa-zA-Z]+)हून\s+([\u0900-\u097Fa-zA-Z]+)', q)
+        if m_mr2:
+            orig = m_mr2.group(1).strip()
+            dest = m_mr2.group(2).strip()
+            orig = INDIC_PORT_MAP.get(orig, orig).title()
+            dest = INDIC_PORT_MAP.get(dest, dest).title()
+            return orig, dest
+
+        # English patterns
+        m = re.search(r'(?:from|between)\s+([a-zA-Z]+)\s+(?:to|and)\s+([a-zA-Z]+)', q_lower)
+        if m:
+            return m.group(1).title(), m.group(2).title()
+
+        m2 = re.search(r'(?:to)\s+([a-zA-Z]+)\s+(?:from)\s+([a-zA-Z]+)', q_lower)
+        if m2:
+            return m2.group(2).title(), m2.group(1).title()
+
+        # Check known coastal locations
+        found_locs = []
+        for loc in COASTAL_LOCATIONS:
+            if re.search(r'\b' + re.escape(loc) + r'\b', q_lower):
+                found_locs.append(loc.title())
+
+        # Also check indic names
+        for indic_name, eng_name in INDIC_PORT_MAP.items():
+            if indic_name in q and eng_name not in found_locs:
+                found_locs.append(eng_name)
+
+        if len(found_locs) >= 2:
+            return found_locs[0], found_locs[1]
+        elif len(found_locs) == 1:
+            if found_locs[0].lower() != default_origin.lower():
+                return default_origin.title(), found_locs[0]
+            else:
+                return found_locs[0], "Pulicat"
+
+        return default_origin.title(), "Pulicat"
+
     def plan(
         self,
         query: str,
@@ -46,10 +126,16 @@ class PlannerAgent:
 
         # 1. Extract location
         extracted_loc = None
-        for loc in COASTAL_LOCATIONS:
-            if re.search(r'\b' + re.escape(loc) + r'\b', q_lower):
-                extracted_loc = loc.title()
+        for indic_name, eng_name in INDIC_PORT_MAP.items():
+            if indic_name in query:
+                extracted_loc = eng_name
                 break
+
+        if not extracted_loc:
+            for loc in COASTAL_LOCATIONS:
+                if re.search(r'\b' + re.escape(loc) + r'\b', q_lower):
+                    extracted_loc = loc.title()
+                    break
 
         # If not explicitly mentioned in query, inspect recent chat history backwards
         if not extracted_loc and chat_history:
@@ -113,7 +199,32 @@ class PlannerAgent:
                 tasks=["Inform user that query is outside marine intelligence scope"]
             ))
 
-        # D. Fishing / Voyage Safety (Complex multi-factor inquiry)
+        # D. Safe Route Recommendation (English, Hindi, Marathi)
+        route_keywords = [
+            "route", "safe route", "shortest route", "recommend route",
+            "navigation route", "sailing course", "navigational track", "path from",
+            "मार्ग", "रास्ता", "सुरक्षित मार्ग", "रूट", "मार्ग बताओ", "दिशा", "मार्ग दाखवा", "जाण्याचा मार्ग"
+        ]
+        is_route = any(kw in q_lower for kw in route_keywords) or ("safe" in q_lower and any(w in q_lower for w in ["route", "path", "corridor", "track"]))
+        
+        if is_route:
+            orig_name, dest_name = self._extract_route_endpoints(query, default_origin=extracted_loc)
+            return _finish_plan(PlannerOutput(
+                intent=QueryIntent.SAFE_ROUTE,
+                location=orig_name,
+                origin=orig_name,
+                destination=dest_name,
+                time=extracted_time,
+                required_agents=["route", "weather", "ocean", "geospatial"],
+                tasks=[
+                    f"Calculate deterministic multi-candidate safe route from {orig_name} to {dest_name}",
+                    f"Retrieve weather and wind conditions along the corridor",
+                    f"Evaluate wave height and swell risk along track",
+                    f"Verify clearance from restricted naval fairways and marine reserves"
+                ]
+            ))
+
+        # E. Fishing / Voyage Safety (Complex multi-factor inquiry)
         safety_keywords = [
             "safe to go fishing", "is it safe", "it is safe", "safety", "can i go to sea",
             "can we go to sea", "should i go fishing", "venture into sea", "safe to sail",
@@ -123,6 +234,7 @@ class PlannerAgent:
             "mechanized boat", "mechanized vessel", "trawler", "can we venture", "can i venture"
         ]
         is_safety = any(kw in q_lower for kw in safety_keywords) or (("safe" in q_lower or "safety" in q_lower) and any(w in q_lower for w in ["sail", "sea", "fish", "boat", "craft", "go", "venture", "tomorrow", "today", "now"]))
+
 
         # Follow-up context inheritance: if query is brief/follow-up, check recent user history
         is_followup = any(q_lower.startswith(p) for p in ["what about", "how about", "and what about", "and for", "and "]) or len(q_lower.split()) <= 4

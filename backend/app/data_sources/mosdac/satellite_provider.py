@@ -35,12 +35,15 @@ class MOSDACSatelliteProvider(BaseMarineProvider):
         username: Optional[str] = None,
         password: Optional[str] = None,
         base_url: Optional[str] = None,
-        dataset_id: Optional[str] = None
+        dataset_id: Optional[str] = None,
+        api_key: Optional[str] = None,
+        **kwargs
     ):
         super().__init__(
             provider_name="MOSDAC",
             capabilities=[ProviderCapability.SATELLITE]
         )
+
         self.client = MOSDACClient(
             username=username,
             password=password,

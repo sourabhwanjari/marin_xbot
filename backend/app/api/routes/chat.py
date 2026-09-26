@@ -20,7 +20,9 @@ async def chat_interaction(request: ChatRequest):
     logger.info(f"[CHAT] Completed response for query = '{request.message[:40]}' | status = {result.get('data_status')}")
 
     suggested_actions = ["Check Current Sea State", "View Active Alerts"]
-    if result.get("risk_level") in ["MEDIUM", "HIGH"]:
+    if result.get("route"):
+        suggested_actions = ["View Route on Map", "Check Swell along Track", "Inspect Hazards"]
+    elif result.get("risk_level") in ["MEDIUM", "HIGH"]:
         suggested_actions = ["Inspect Swell on Map", "View Port Control Notices", "Check Safety Guidelines"]
     elif result.get("intent") == "pfz_discovery":
         suggested_actions = ["Show Zone Alpha on Map", "Check Weather along Route"]
@@ -43,4 +45,9 @@ async def chat_interaction(request: ChatRequest):
         execution_steps=result.get("execution_steps", []),
         location=result.get("location"),
         time_context=result.get("time_context"),
+        route=result.get("route"),
+        detected_language=result.get("detected_language"),
+        response_language=result.get("response_language"),
+        map_data=result.get("map_data"),
     )
+

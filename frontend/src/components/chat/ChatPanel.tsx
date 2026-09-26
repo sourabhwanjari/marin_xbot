@@ -76,8 +76,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onActionSelect }) => {
         executionSteps: response.execution_steps,
         location: response.location,
         timeContext: response.time_context,
+        route: response.route,
+        detected_language: response.detected_language,
+        response_language: response.response_language,
+        map_data: response.map_data,
       };
       setMessages((prev) => [...prev, aiMsg]);
+
     } catch (err) {
       const errorMsg: ChatMessageType = {
         id: `err-${Date.now()}`,
