@@ -29,13 +29,17 @@ def get_weather_data(location: str = "chennai", time_context: str = "current") -
     status_str = normalized.status.value if hasattr(normalized.status, "value") else str(normalized.status)
     logger.info(f"[MARINE_DATA] Gateway get_weather returned provider='{normalized.provider}', status='{status_str}'")
 
-    storm_risk = "low"
-    if normalized.wind_speed is not None and normalized.wind_speed >= 22.0:
-        storm_risk = "high"
-    elif (normalized.wind_speed is not None and normalized.wind_speed >= 16.0) or (normalized.rain_probability is not None and normalized.rain_probability >= 40):
-        storm_risk = "moderate"
-    elif normalized.wind_speed is None:
-        storm_risk = "unknown"
+    storm_risk = normalized.data.get("storm_risk") if isinstance(normalized.data, dict) and normalized.data.get("storm_risk") else None
+    if not storm_risk:
+        cond_lower = (normalized.weather_condition or "").lower()
+        if (normalized.wind_speed is not None and normalized.wind_speed >= 22.0) or "thunderstorm" in cond_lower or "squall" in cond_lower:
+            storm_risk = "high"
+        elif (normalized.wind_speed is not None and normalized.wind_speed >= 16.0) or (normalized.rain_probability is not None and normalized.rain_probability >= 40):
+            storm_risk = "moderate"
+        elif normalized.wind_speed is None:
+            storm_risk = "unknown"
+        else:
+            storm_risk = "low"
 
     desc = normalized.weather_condition
     if not desc:

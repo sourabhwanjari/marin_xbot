@@ -64,7 +64,7 @@ def test_weather_agent():
     assert "wind_speed" in w
     assert "wind_direction" in w
     assert "storm_risk" in w
-    assert w["data_status"] in ["external", "demo"]
+    assert w["data_status"] in ["verified", "external", "demo"]
 
 # 3. Test Ocean Agent
 def test_ocean_agent():

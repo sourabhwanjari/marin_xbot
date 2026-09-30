@@ -39,8 +39,17 @@ export const MarineMap: React.FC<MarineMapProps> = ({
   const baseTileLayerRef = useRef<any>(null);
   const layersRef = useRef<any[]>([]);
 
-  // Basemap state: standard (CartoDB Voyager) vs satellite (ESRI World Imagery)
-  const [basemap, setBasemap] = useState<"standard" | "satellite">("standard");
+  // RapidAPI MapTiles configuration with user-provided key
+  const RAPIDAPI_KEY =
+    process.env.NEXT_PUBLIC_RAPIDAPI_KEY ||
+    "e5f367a1d1mshceae8e687637286p187d55jsnab86f1cf2552";
+  const RAPIDAPI_HOST =
+    process.env.NEXT_PUBLIC_RAPIDAPI_HOST ||
+    "maptiles.p.rapidapi.com";
+
+  // Basemap state: RapidAPI Satellite (Bathymetric Topo) vs ESRI Aerial
+  // Standard map has been removed per user request
+  const [basemap, setBasemap] = useState<"satellite" | "esri">("satellite");
 
   const [layersEnabled, setLayersEnabled] = useState({
     pfz: true,
@@ -74,24 +83,36 @@ export const MarineMap: React.FC<MarineMapProps> = ({
       const map = L.map(mapContainerRef.current, {
         center: [centerLat, centerLon],
         zoom: route ? 11 : 10,
-        minZoom: 5,
-        maxZoom: 18,
+        minZoom: 4,
+        maxZoom: 19,
         zoomControl: false,
       });
 
       // Position zoom controls in top-left
       L.control.zoom({ position: "topleft" }).addTo(map);
 
-      // Initial Base Tile Layer (CartoDB Voyager)
-      const baseLayer = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-        {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-          subdomains: "abcd",
-          maxZoom: 19,
-        }
-      ).addTo(map);
+      // Initial Base Tile Layer (RapidAPI Satellite by default)
+      let baseLayer;
+      if (basemap === "esri") {
+        baseLayer = L.tileLayer(
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          {
+            attribution:
+              "Tiles &copy; Esri &mdash; Source: Esri, USGS, NOAA",
+            maxZoom: 18,
+          }
+        );
+      } else {
+        baseLayer = L.tileLayer(
+          `https://${RAPIDAPI_HOST}/en/map/v1/{z}/{x}/{y}.png?rapidapi-key=${RAPIDAPI_KEY}`,
+          {
+            attribution:
+              '&copy; <a href="https://www.maptilesapi.com" target="_blank" rel="noopener noreferrer">MapTiles API</a> &copy; <a href="https://rapidapi.com" target="_blank" rel="noopener noreferrer">RapidAPI</a>',
+            maxZoom: 19,
+          }
+        );
+      }
+      baseLayer.addTo(map);
 
       baseTileLayerRef.current = baseLayer;
       mapInstanceRef.current = map;
@@ -111,7 +132,7 @@ export const MarineMap: React.FC<MarineMapProps> = ({
     };
   }, []);
 
-  // 2. Basemap Layer Switcher (Standard <-> Satellite)
+  // 2. Basemap Layer Switcher (RapidAPI Satellite <-> ESRI Aerial)
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -121,7 +142,7 @@ export const MarineMap: React.FC<MarineMapProps> = ({
         map.removeLayer(baseTileLayerRef.current);
       }
 
-      if (basemap === "satellite") {
+      if (basemap === "esri") {
         baseTileLayerRef.current = L.default.tileLayer(
           "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
           {
@@ -132,11 +153,10 @@ export const MarineMap: React.FC<MarineMapProps> = ({
         ).addTo(map);
       } else {
         baseTileLayerRef.current = L.default.tileLayer(
-          "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+          `https://${RAPIDAPI_HOST}/en/map/v1/{z}/{x}/{y}.png?rapidapi-key=${RAPIDAPI_KEY}`,
           {
             attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: "abcd",
+              '&copy; <a href="https://www.maptilesapi.com" target="_blank" rel="noopener noreferrer">MapTiles API</a> &copy; <a href="https://rapidapi.com" target="_blank" rel="noopener noreferrer">RapidAPI</a>',
             maxZoom: 19,
           }
         ).addTo(map);
@@ -407,21 +427,8 @@ export const MarineMap: React.FC<MarineMapProps> = ({
           <span className="text-slate-300 font-medium">PostGIS / GeoJSON Active</span>
         </div>
 
-        {/* Basemap Switcher Pill: [Standard] [🛰️ Satellite] */}
+        {/* Satellite Basemap Switcher: [🛰️ RapidAPI Satellite] [ESRI Aerial] */}
         <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/90 p-0.5 rounded-xl flex items-center shadow-md">
-          <button
-            type="button"
-            onClick={() => setBasemap("standard")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
-              basemap === "standard"
-                ? "bg-blue-600 text-white shadow-xs"
-                : "text-slate-400 hover:text-white"
-            }`}
-            title="CartoDB Voyager Standard Nautical Map"
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span>Standard</span>
-          </button>
           <button
             type="button"
             onClick={() => setBasemap("satellite")}
@@ -430,10 +437,26 @@ export const MarineMap: React.FC<MarineMapProps> = ({
                 ? "bg-cyan-600 text-white shadow-xs"
                 : "text-slate-400 hover:text-white"
             }`}
-            title="ESRI World Imagery Satellite Earth Observation Basemap"
+            title="RapidAPI Satellite & Ocean Bathymetric Topography (Integrated API Key)"
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>Satellite</span>
+            <span>RapidAPI Satellite</span>
+            <span className="text-[9px] bg-cyan-950 text-cyan-300 font-bold px-1.5 py-0.5 rounded border border-cyan-500/40">
+              Active
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setBasemap("esri")}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+              basemap === "esri"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "text-slate-400 hover:text-white"
+            }`}
+            title="ESRI High-Resolution Optical Earth Imagery"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>ESRI Aerial</span>
           </button>
         </div>
       </div>

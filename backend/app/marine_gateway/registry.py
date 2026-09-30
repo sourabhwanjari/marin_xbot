@@ -10,6 +10,8 @@ from app.data_sources.incois.pfz_provider import INCOISPFZProvider
 from app.data_sources.mosdac.satellite_provider import MOSDACSatelliteProvider
 from app.data_sources.gis.provider import GISProvider
 from app.data_sources.common.fallback_providers import OpenMeteoWeatherProvider, OpenMeteoOceanProvider
+from app.data_sources.rapidapi.weather_provider import RapidAPIWeatherProvider
+from app.data_sources.rapidapi.noaa_provider import RapidAPINOAAWeatherProvider
 
 logger = logging.getLogger("marinex.gateway.registry")
 
@@ -17,7 +19,7 @@ class ProviderRegistry:
     """
     Central Registry for Marine Data Providers.
     Maps capabilities to primary and secondary providers:
-      WEATHER    -> IMD (Primary) / Open-Meteo (Secondary/Fallback)
+      WEATHER    -> RapidAPI NOAA Weather (Primary) / RapidAPI Weather338 (Global Primary) / IMD / Open-Meteo
       OCEAN      -> INCOIS (Primary) / Open-Meteo Marine (Secondary/Fallback)
       PFZ        -> INCOIS (Primary)
       SATELLITE  -> MOSDAC (Primary)
@@ -33,9 +35,17 @@ class ProviderRegistry:
 
     def _bootstrap_default_providers(self):
         """Initializes standard National and Global Marine data providers."""
-        # 1. IMD (Weather)
+        # 1. RapidAPI NOAA Weather (NOAA Forecasting via noaa-weather2.p.rapidapi.com)
+        rapidapi_noaa = RapidAPINOAAWeatherProvider()
+        self.register_provider(rapidapi_noaa, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=True)
+
+        # 2. RapidAPI Weather338 (Global Live Meteorological Observations)
+        rapidapi_weather = RapidAPIWeatherProvider()
+        self.register_provider(rapidapi_weather, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=False)
+
+        # 3. IMD (National Indian Weather)
         imd = IMDWeatherProvider()
-        self.register_provider(imd, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=True)
+        self.register_provider(imd, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=False)
 
         # 2. INCOIS Ocean (Wave, Sea State, SST)
         incois_ocean = INCOISOceanProvider()

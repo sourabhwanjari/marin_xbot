@@ -76,4 +76,11 @@ class Settings(BaseModel):
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "")
     POSTGIS_ENABLED: bool = os.getenv("POSTGIS_ENABLED", "false").lower() in ("true", "1", "yes")
 
+    # RapidAPI & NOAA Weather Settings
+    RAPIDAPI_KEY: str = os.getenv("RAPIDAPI_KEY", "e5f367a1d1mshceae8e687637286p187d55jsnab86f1cf2552")
+    RAPIDAPI_WEATHER_KEY: str = os.getenv("RAPIDAPI_WEATHER_KEY", os.getenv("RAPIDAPI_KEY", "e5f367a1d1mshceae8e687637286p187d55jsnab86f1cf2552"))
+    RAPIDAPI_WEATHER_HOST: str = os.getenv("RAPIDAPI_WEATHER_HOST", "weather338.p.rapidapi.com")
+    RAPIDAPI_NOAA_HOST: str = os.getenv("RAPIDAPI_NOAA_HOST", "noaa-weather2.p.rapidapi.com")
+    RAPIDAPI_NOAA_KEY: str = os.getenv("RAPIDAPI_NOAA_KEY", os.getenv("RAPIDAPI_KEY", "e5f367a1d1mshceae8e687637286p187d55jsnab86f1cf2552"))
+
 settings = Settings()
