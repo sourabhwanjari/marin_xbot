@@ -48,7 +48,7 @@ def get_weather_data(location: str = "chennai", time_context: str = "current") -
         else:
             desc = "Marine weather conditions"
 
-    return {
+    res_dict = {
         "location": location,
         "time_context": time_context,
         "temperature": normalized.temperature,
@@ -64,4 +64,15 @@ def get_weather_data(location: str = "chennai", time_context: str = "current") -
         "valid_until": normalized.valid_until,
         "units": normalized.units
     }
+    if isinstance(normalized.data, dict):
+        if "astronomical" in normalized.data:
+            res_dict["astronomical"] = normalized.data["astronomical"]
+        if "precipitation_mm" in normalized.data:
+            res_dict["precipitation_mm"] = normalized.data["precipitation_mm"]
+        if "relative_humidity" in normalized.data:
+            res_dict["relative_humidity"] = normalized.data["relative_humidity"]
+        if "visibility_km" in normalized.data:
+            res_dict["visibility_km"] = normalized.data["visibility_km"]
+
+    return res_dict
 

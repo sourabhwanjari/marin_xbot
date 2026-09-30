@@ -12,6 +12,7 @@ from app.data_sources.gis.provider import GISProvider
 from app.data_sources.common.fallback_providers import OpenMeteoWeatherProvider, OpenMeteoOceanProvider
 from app.data_sources.rapidapi.weather_provider import RapidAPIWeatherProvider
 from app.data_sources.rapidapi.noaa_provider import RapidAPINOAAWeatherProvider
+from app.data_sources.rapidapi.marine_weather_provider import RapidAPIMarineWeatherProvider
 
 logger = logging.getLogger("marinex.gateway.registry")
 
@@ -19,7 +20,7 @@ class ProviderRegistry:
     """
     Central Registry for Marine Data Providers.
     Maps capabilities to primary and secondary providers:
-      WEATHER    -> RapidAPI NOAA Weather (Primary) / RapidAPI Weather338 (Global Primary) / IMD / Open-Meteo
+      WEATHER    -> RapidAPI Marine Weather (ApiVerve) / RapidAPI Weather338 / RapidAPI NOAA Weather / IMD / Open-Meteo
       OCEAN      -> INCOIS (Primary) / Open-Meteo Marine (Secondary/Fallback)
       PFZ        -> INCOIS (Primary)
       SATELLITE  -> MOSDAC (Primary)
@@ -35,15 +36,19 @@ class ProviderRegistry:
 
     def _bootstrap_default_providers(self):
         """Initializes standard National and Global Marine data providers."""
-        # 1. RapidAPI NOAA Weather (NOAA Forecasting via noaa-weather2.p.rapidapi.com)
-        rapidapi_noaa = RapidAPINOAAWeatherProvider()
-        self.register_provider(rapidapi_noaa, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=True)
+        # 1. RapidAPI Marine Weather ApiVerve (Specialized Marine/Offshore Weather & Ephemeris)
+        rapidapi_marine = RapidAPIMarineWeatherProvider()
+        self.register_provider(rapidapi_marine, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=True)
 
-        # 2. RapidAPI Weather338 (Global Live Meteorological Observations)
+        # 2. RapidAPI Weather338 (Global Atmospheric & Meteorological Observations)
         rapidapi_weather = RapidAPIWeatherProvider()
         self.register_provider(rapidapi_weather, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=False)
 
-        # 3. IMD (National Indian Weather)
+        # 3. RapidAPI NOAA Weather (NOAA Forecasting via noaa-weather2.p.rapidapi.com & NWS)
+        rapidapi_noaa = RapidAPINOAAWeatherProvider()
+        self.register_provider(rapidapi_noaa, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=False)
+
+        # 4. IMD (National Indian Weather)
         imd = IMDWeatherProvider()
         self.register_provider(imd, capabilities=[ProviderCapability.WEATHER, ProviderCapability.HAZARDS], is_primary=False)
 
